@@ -3,25 +3,22 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
-// Ensure these files exist in public/images/
 const images = [
- '/images/raaja-bg-11.jpeg',
+  '/images/raaja-bg-11.jpeg',
   '/images/raaja-bg-5.jpeg',
   '/images/raaja-bg-3.jpeg',
   '/images/raaja-bg-6.jpeg',
   '/images/raaja-bg-8.jpeg',
   '/images/raaja-bg-9.jpeg',
   '/images/raaja-bg-10.jpeg',
-   '/images/raaja-bg-2.jpeg',
+  '/images/raaja-bg-2.jpeg',
   '/images/raaja-album-cover.webp'
-  
 ];
 
 export default function BackgroundSlideshow() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    // Change image every 5 seconds
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 5000);
@@ -42,8 +39,11 @@ export default function BackgroundSlideshow() {
             src={src}
             alt="Background"
             fill
-            // Added 'animate-slow-zoom' for the moving effect
-            className="object-cover object-top animate-slow-zoom"
+            /* MODIFIED LINE BELOW:
+               animate-none: Disables animation on small screens (mobile)
+               md:animate-slow-zoom: Enables the zoom only on screens >= 768px 
+            */
+            className="object-cover object-top animate-none md:animate-slow-zoom"
             priority={index === 0}
           />
         </div>
