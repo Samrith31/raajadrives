@@ -43,7 +43,7 @@ export default function BackgroundSlideshow() {
                animate-none: Disables animation on small screens (mobile)
                md:animate-slow-zoom: Enables the zoom only on screens >= 768px 
             */
-            className="object-cover object-top animate-none md:animate-slow-zoom"
+          className="object-cover object-top animate-none md:animate-slow-zoom"
             priority={index === 0}
           />
         </div>
