@@ -53,7 +53,7 @@ export default function Footer() {
           <div className="md:col-span-3">
             <h3 className="text-white font-bold mb-6">Explore</h3>
             <ul className="space-y-4 text-sm text-neutral-400">
-              <li><Link href="/" className="hover:text-red-500 transition-colors">Latest Releases</Link></li>
+              <li><Link href="/latest" className="hover:text-red-500 transition-colors">Latest Releases</Link></li>
               <li><Link href="/flac" className="hover:text-red-500 transition-colors">Digital FLAC</Link></li>
               <li><Link href="/lprips" className="hover:text-red-500 transition-colors">Vinyl Rips</Link></li>
               <li><Link href="/cdrips" className="hover:text-red-500 transition-colors">CD Archive</Link></li>

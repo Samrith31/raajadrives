@@ -1,4 +1,4 @@
-import './globals.css';
+import "./global.css";
 import { Inter, Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 // 👇 1. Import the SearchBar

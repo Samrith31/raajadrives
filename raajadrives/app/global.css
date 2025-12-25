@@ -6,14 +6,13 @@
   --font-display: var(--font-space);
 
   /* --- ANIMATIONS --- */
-  /* 1. Define the utility class name */
   --animate-ken-burns: ken-burns 20s infinite alternate ease-in-out;
   --animate-fade-up: fade-up 1s ease-out forwards;
 
-  /* 2. Define the Keyframes */
+  /* --- KEYFRAMES (Allowed inside @theme) --- */
   @keyframes ken-burns {
     0% { transform: scale(1) translate(0, 0); }
-    100% { transform: scale(1.05) translate(-2%, -1%); } /* Updated to 1.05 for sharpness */
+    100% { transform: scale(1.05) translate(-2%, -1%); }
   }
 
   @keyframes fade-up {
@@ -35,10 +34,8 @@
     100% { transform: translate(5%,0) }
   }
 } 
-/* ⬆️ THEME BLOCK ENDS HERE ⬆️ */
 
-
-/* --- STANDARD CSS (Must be outside @theme) --- */
+/* --- CUSTOM CLASSES (MUST be outside and after @theme) --- */
 
 .bg-noise {
   position: absolute;
@@ -60,10 +57,10 @@
   font-family: var(--font-inter), system-ui, sans-serif;
 }
 
-/* Hide Scrollbar Utilities */
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
 }
+
 .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
