@@ -6,8 +6,6 @@
   --font-display: var(--font-space);
 
   /* --- ANIMATIONS --- */
-  --animate-slow-zoom: slow-zoom 20s infinite alternate ease-in-out;
-  --animate-ken-burns: ken-burns 20s infinite alternate ease-in-out;
   --animate-fade-up: fade-up 1s ease-out forwards;
 
   /* --- KEYFRAMES --- */

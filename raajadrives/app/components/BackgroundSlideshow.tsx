@@ -35,19 +35,15 @@ export default function BackgroundSlideshow() {
             index === currentIndex ? 'opacity-70' : 'opacity-0'
           }`}
         >
-          <Image
-            src={src}
-            alt="Background"
-            fill
-            /* MODIFIED LINE BELOW:
-               animate-none: Disables animation on small screens (mobile)
-               md:animate-slow-zoom: Enables the zoom only on screens >= 768px 
-            */
-          className="object-cover object-top animate-none md:animate-slow-zoom"
-            priority={index === 0}
-          />
-        </div>
-      ))}
+            <Image
+        src={src}
+        alt="Background"
+        fill
+        className="object-cover object-top" 
+        priority={index === 0}
+        />
+                </div>
+            ))}
       
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/70 to-black" />
