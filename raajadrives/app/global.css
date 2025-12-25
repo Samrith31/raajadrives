@@ -39,6 +39,15 @@
   }
 } 
 
+.mobile-scroll-fix {
+  /* Forces hardware acceleration */
+  transform: translateZ(0);
+  will-change: opacity;
+  /* Helps avoid jitter on iOS Safari */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 /* --- CUSTOM CLASSES (STAY OUTSIDE) --- */
 
 .bg-noise {

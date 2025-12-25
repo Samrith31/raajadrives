@@ -71,7 +71,7 @@ export default async function HomePage() {
         <section>
           <SectionHeader
             title="Digital Downloads"
-            subtitle="Hi-Res & 16-bit FLAC"
+            subtitle="Hi-Res & 16-bit FLAC and Wav"
             href="/flac"
           />
           <AlbumGrid
@@ -86,7 +86,7 @@ export default async function HomePage() {
         <section>
           <SectionHeader
             title="CD Rips"
-            subtitle="Exact Audio Copy (EAC) extractions"
+            subtitle="Uncompressed WAV Extractions"
             href="/cdrips"
           />
           <AlbumGrid
