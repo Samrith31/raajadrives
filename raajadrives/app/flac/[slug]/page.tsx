@@ -1,0 +1,131 @@
+import { supabase } from '@/app/lib/supabase';
+import { Release, ReleaseType } from '@/app/data/release';
+import Image from 'next/image';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import CommentSection from '@/app/components/CommentSection';
+// 👇 Import the new slideshow component
+import BackgroundSlideshow from '@/app/components/BackgroundSlideshow';
+
+export const revalidate = 0;
+
+interface AlbumPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+interface DatabaseRow {
+  id: string;
+  created_at: string;
+  title: string;
+  artist: string;
+  slug: string;
+  year: number;
+  type: string;
+  quality: string | null;
+  cover_url: string | null;
+  download_url: string;
+}
+
+async function getAlbum(slug: string): Promise<Release | null> {
+  const { data, error } = await supabase
+    .from('releases')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  if (error || !data) return null;
+
+  const item = data as DatabaseRow;
+
+  return {
+    id: item.id,
+    title: item.title,
+    artist: item.artist,
+    slug: item.slug,
+    year: item.year,
+    type: item.type as ReleaseType,
+    quality: item.quality || undefined,
+    cover: item.cover_url || '/images/placeholder.jpg',
+    downloadUrl: item.download_url
+  };
+}
+
+export default async function AlbumPage({ params }: AlbumPageProps) {
+  const { slug } = await params;
+  const album = await getAlbum(slug);
+
+  if (!album) {
+    notFound();
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center py-20 px-6 relative isolate">
+      
+      {/* 👇 REPLACED STATIC IMAGE WITH SLIDESHOW COMPONENT */}
+      <BackgroundSlideshow />
+
+      {/* --- Main Album Card --- */}
+      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-10 items-center mb-16 z-10">
+        
+        {/* Left Col: Cover Art */}
+        <div className="relative aspect-square w-full max-w-[400px] mx-auto rounded-xl shadow-2xl shadow-black/70 overflow-hidden border border-white/10 group">
+          <Image
+            src={album.cover}
+            alt={album.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 400px"
+            priority 
+          />
+        </div>
+
+        {/* Right Col: Details */}
+        <div className="space-y-6 text-center md:text-left">
+          <div>
+            {album.quality && (
+              <span className="inline-block mb-3 px-3 py-1 text-xs font-bold tracking-widest text-red-400 bg-red-900/20 border border-red-500/20 rounded-full uppercase">
+                {album.quality}
+              </span>
+            )}
+            <h1 className="font-display text-4xl md:text-5xl font-bold leading-tight mb-2 text-white drop-shadow-lg">
+              {album.title}
+            </h1>
+            <p className="font-ui text-xl text-neutral-300 drop-shadow-md">
+              {album.artist}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1 text-sm text-neutral-400 font-mono border-l-2 border-neutral-700 pl-4 mx-auto md:mx-0 max-w-max bg-black/30 p-2 rounded-r-lg backdrop-blur-sm">
+            <span>Year: {album.year || 'N/A'}</span>
+            <span>
+              Format: {
+                album.type === 'lprip' ? 'Vinyl Rip' : 
+                album.type === 'cdrip' ? 'CD Rip' : 'Digital DL Flac'
+              }
+            </span>
+          </div>
+
+          <div className="pt-4">
+            <Link
+              href={album.downloadUrl}
+              target="_blank"
+              className="inline-flex items-center justify-center w-full md:w-auto px-8 py-4 font-bold text-white bg-red-600 rounded-full hover:bg-red-500 hover:scale-105 transition-all shadow-lg shadow-red-900/30"
+            >
+              Download Album
+            </Link>
+            <p className="mt-3 text-xs text-neutral-400">
+              Direct download • No compression
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      {/* --- Comment Section --- */}
+      <div className="w-full max-w-2xl z-10">
+        <CommentSection slug={album.slug} />
+      </div>
+
+    </div>
+  );
+}
