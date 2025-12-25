@@ -1,9 +1,10 @@
 import "./global.css";
 import { Inter, Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
-// 👇 1. Import the SearchBar
 import SearchBar from '@/app/components/SearchBar';
 import Footer from '@/app/components/footer';
+// 👇 1. Import the MobileNav component
+import MobileNav from '@/app/components/MobileNav';
 
 const inter = Inter({ 
   subsets: ['latin'], 
@@ -51,12 +52,9 @@ export default function RootLayout({
               </h1>
             </Link>
 
-            {/* Desktop Nav */}
+            {/* Desktop Nav (Hidden on Mobile) */}
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-400">
-              
-              {/* 👇 2. ADD SEARCH BAR HERE */}
               <SearchBar />
-
               <Link href="/latest" className="hover:text-white transition-colors ml-2">Latest</Link>
               <Link href="/all" className="hover:text-white transition-colors">Archive</Link>
               <button className="px-4 py-1.5 text-xs font-bold uppercase tracking-wider bg-white text-black rounded-full hover:bg-neutral-200 transition-transform hover:scale-105">
@@ -67,11 +65,15 @@ export default function RootLayout({
           </div>
         </header>
 
-        <main className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* 👇 2. Main content: Added pb-20 on mobile to clear the bottom nav bar */}
+        <main className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
           {children}
         </main>
 
         <Footer />
+
+        {/* 👇 3. Add MobileNav here so it stays persistent across all pages */}
+        <MobileNav />
 
       </body>
     </html>
