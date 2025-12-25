@@ -1,6 +1,21 @@
 @import "tailwindcss";
 
 @theme {
+
+
+  --animate-slow-zoom: slow-zoom 20s infinite alternate ease-in-out;
+
+  /* 2. Define the keyframes inside the theme block */
+  @keyframes slow-zoom {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1.1);
+    }
+  }
+
+
   /* --- FONTS --- */
   --font-sans: var(--font-inter);
   --font-display: var(--font-space);
