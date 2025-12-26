@@ -122,13 +122,7 @@ export default async function SinglePage({ params }: SinglePageProps) {
             <div className="absolute inset-0 bg-red-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
           </Link>
           
-          <div className="flex items-center gap-4 text-[10px] text-neutral-500 font-bold uppercase tracking-[0.2em]">
-            <span>{single.year} Release</span>
-            <span className="w-1 h-1 bg-neutral-700 rounded-full" />
-            <span>Studio Master</span>
-            <span className="w-1 h-1 bg-neutral-700 rounded-full" />
-            <span>FLAC 16/44.1</span>
-          </div>
+        
         </div>
       </div>
 
