@@ -14,6 +14,7 @@ interface SearchResult {
   slug: string;
   type: string;
   cover_url: string | null;
+  is_single: boolean; // Added is_single flag
 }
 
 export default function MobileNav() {
@@ -34,9 +35,10 @@ export default function MobileNav() {
       }
 
       setIsLoading(true);
+      // 1. Updated Select to include is_single
       const { data, error } = await supabase
         .from('releases')
-        .select('id, title, artist, slug, type, cover_url')
+        .select('id, title, artist, slug, type, cover_url, is_single')
         .or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%`)
         .limit(5);
 
@@ -62,7 +64,7 @@ export default function MobileNav() {
     <>
       {/* Search Overlay with Smooth Entrance */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-2xl animate-in fade-in duration-300 overflow-y-auto">
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300 overflow-y-auto">
           <div className="p-6 flex flex-col gap-6 min-h-full">
             <div className="flex justify-between items-center animate-in slide-in-from-top-4 duration-500">
               <h2 className="text-white font-bold text-2xl tracking-tighter uppercase italic">Search</h2>
@@ -80,19 +82,25 @@ export default function MobileNav() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search albums, artists..."
+                placeholder="Search songs, albums..."
                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-white text-lg focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all shadow-2xl"
               />
             </form>
 
             {/* Results with Staggered Fade-in */}
             <div className="flex flex-col gap-3">
-              {isLoading && <p className="text-red-500 text-sm animate-pulse font-medium">Scanning database...</p>}
+              {isLoading && <p className="text-red-500 text-sm animate-pulse font-medium">Scanning archive...</p>}
               
               {results.map((album, index) => {
+                // --- 2. UPDATED DYNAMIC ROUTING LOGIC ---
                 let prefix = '/flac';
-                if (album.type === 'lprip') prefix = '/lprips';
-                if (album.type === 'cdrip') prefix = '/cdrips';
+                if (album.is_single) {
+                  prefix = '/single'; // Priority route
+                } else if (album.type === 'lprip') {
+                  prefix = '/lprips';
+                } else if (album.type === 'cdrip') {
+                  prefix = '/cdrips';
+                }
 
                 return (
                   <Link 
@@ -102,14 +110,22 @@ export default function MobileNav() {
                     style={{ animationDelay: `${index * 50}ms` }}
                     className="flex items-center gap-4 p-3 bg-white/5 rounded-2xl border border-white/5 active:scale-[0.98] active:bg-white/10 transition-all animate-in fade-in slide-in-from-bottom-3 duration-500"
                   >
-                    <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-neutral-800 shrink-0 shadow-lg">
+                    <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-neutral-800 shrink-0 shadow-lg border border-white/5">
                       <Image 
                         src={album.cover_url || '/images/placeholder.jpg'} 
                         alt="" fill className="object-cover" 
                       />
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-white text-base truncate">{album.title}</h3>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-white text-base truncate">{album.title}</h3>
+                        {/* 3. NEW: Subtle Mobile Indicator for Single */}
+                        {album.is_single && (
+                          <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 rounded uppercase tracking-tighter">
+                            Single
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-neutral-400 truncate uppercase tracking-widest">{album.artist}</p>
                     </div>
                   </Link>
@@ -134,7 +150,7 @@ export default function MobileNav() {
       )}
 
       {/* Persistent Bottom Nav Bar */}
-      <nav className="fixed bottom-0 left-0 w-full bg-neutral-950/80 backdrop-blur-xl border-t border-white/5 md:hidden z-[90] pb-safe">
+      <nav className="fixed bottom-0 left-0 w-full bg-neutral-950/90 backdrop-blur-2xl border-t border-white/5 md:hidden z-[90] pb-safe">
         <ul className="flex justify-around items-center h-20">
           {[
             { label: 'Home', href: '/', icon: <HiHome size={26} /> },
