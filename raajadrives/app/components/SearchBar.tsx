@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import Image from 'next/image';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface SearchResult {
   id: string;
@@ -13,6 +13,7 @@ interface SearchResult {
   slug: string;
   type: string;
   cover_url: string | null;
+  is_single: boolean; // Added to fetch the flag
 }
 
 export default function SearchBar() {
@@ -25,10 +26,7 @@ export default function SearchBar() {
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 👇 FIX: Everything is now inside the timeout to avoid "Synchronous setState" error
     const delayDebounceFn = setTimeout(async () => {
-      
-      // 1. If query is too short, just clear results and stop
       if (query.length < 2) {
         setResults([]);
         return; 
@@ -36,9 +34,10 @@ export default function SearchBar() {
 
       setIsLoading(true);
       
+      // 1. Updated Select to include is_single
       const { data, error } = await supabase
         .from('releases')
-        .select('id, title, artist, slug, type, cover_url')
+        .select('id, title, artist, slug, type, cover_url, is_single')
         .or(`title.ilike.%${query}%,artist.ilike.%${query}%`)
         .limit(5);
 
@@ -51,12 +50,11 @@ export default function SearchBar() {
       
       setIsLoading(false);
       setShowDropdown(true);
-    }, 300); // 300ms delay
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [query]);
 
-  // Handle clicks outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -81,11 +79,10 @@ export default function SearchBar() {
       <form onSubmit={handleSubmit} className="relative">
         <input
           type="text"
-          placeholder="Search..."
+          placeholder="Search archive..."
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            // Don't show dropdown immediately if empty, let the effect handle it
             if (e.target.value.length >= 2) setShowDropdown(true);
           }}
           className="bg-white/5 text-sm text-white placeholder-neutral-500 border border-white/5 rounded-full pl-10 pr-4 py-1.5 focus:outline-none focus:bg-white/10 focus:border-white/20 focus:w-72 w-48 transition-all duration-300"
@@ -100,29 +97,34 @@ export default function SearchBar() {
         </svg>
       </form>
 
-      {/* Dropdown Results */}
       {showDropdown && results.length > 0 && (
         <div className="absolute top-full right-0 mt-3 w-80 bg-neutral-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           
           {isLoading ? (
-            <div className="p-4 text-center text-xs text-neutral-500">
-              Searching...
+            <div className="p-4 text-center text-xs text-neutral-500 font-mono uppercase tracking-widest">
+              Searching Archive...
             </div>
           ) : (
             <ul>
               {results.map((album) => {
+                // --- 2. UPDATED DYNAMIC ROUTING LOGIC ---
                 let linkPrefix = '/flac';
-                if (album.type === 'lprip') linkPrefix = '/lprips';
-                if (album.type === 'cdrip') linkPrefix = '/cdrips';
+                if (album.is_single) {
+                  linkPrefix = '/single';
+                } else if (album.type === 'lprip') {
+                  linkPrefix = '/lprips';
+                } else if (album.type === 'cdrip') {
+                  linkPrefix = '/cdrips';
+                }
 
                 return (
                   <li key={album.id}>
                     <Link 
                       href={`${linkPrefix}/${album.slug}`}
                       onClick={() => setShowDropdown(false)}
-                      className="flex items-center gap-3 p-3 hover:bg-white/10 transition-colors border-b border-white/5 last:border-0"
+                      className="flex items-center gap-3 p-3 hover:bg-white/10 transition-colors border-b border-white/5 last:border-0 group/item"
                     >
-                      <div className="relative w-10 h-10 rounded overflow-hidden shrink-0 bg-neutral-800">
+                      <div className="relative w-10 h-10 rounded-md overflow-hidden shrink-0 bg-neutral-800 border border-white/5">
                         <Image 
                           src={album.cover_url || '/images/placeholder.jpg'} 
                           alt="" 
@@ -130,20 +132,30 @@ export default function SearchBar() {
                           className="object-cover"
                         />
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{album.title}</p>
-                        <p className="text-xs text-neutral-400 truncate">{album.artist}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                           <p className="text-sm font-bold text-white truncate group-hover/item:text-red-500 transition-colors">
+                            {album.title}
+                           </p>
+                           {/* 3. NEW: Subtle Single Indicator */}
+                           {album.is_single && (
+                             <span className="text-[8px] font-black bg-amber-500 text-black px-1 rounded uppercase tracking-tighter shrink-0">
+                               Single
+                             </span>
+                           )}
+                        </div>
+                        <p className="text-xs text-neutral-400 truncate font-medium italic">{album.artist}</p>
                       </div>
                     </Link>
                   </li>
                 );
               })}
-              <li className="bg-neutral-950 p-2 text-center">
+              <li className="bg-neutral-950 p-2.5 text-center border-t border-white/5">
                  <button 
                    onClick={(e) => handleSubmit(e)}
-                   className="text-xs text-red-400 hover:text-white transition-colors font-bold uppercase tracking-wider"
+                   className="text-[10px] text-neutral-500 hover:text-white transition-colors font-black uppercase tracking-[0.2em]"
                  >
-                   View All Results
+                   Expand All Results
                  </button>
               </li>
             </ul>
