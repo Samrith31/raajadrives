@@ -117,9 +117,9 @@ export default function StarRating({ albumId, initialSum, initialCount }: StarRa
           ${hasVoted ? 'bg-red-500 shadow-[0_0_6px_#ef4444]' : 'bg-white/10 animate-pulse'}`} 
         />
         <p className={`text-[9px] uppercase tracking-[0.4em] font-black transition-colors duration-500
-          ${hasVoted ? 'text-neutral-500' : hover > 0 ? (isFirstRating ? 'text-red-500' : 'text-amber-400') : 'text-neutral-700'}
+          ${hasVoted ? 'text-neutral-500' : hover > 0 ? (isFirstRating ? 'text-red-500' : 'text-amber-400') : 'text-neutral-200'}
         `}>
-          {hasVoted ? "This Raaja Fan has Logged" : hover > 0 ? "Just Thendral Vandhu Theendumodhu..." : "Rate this Album"}
+          {hasVoted ? "This Raaja Fan has Logged" : hover > 0 ? "Logging..." : "Rate this Album"}
         </p>
       </div>
     </div>
