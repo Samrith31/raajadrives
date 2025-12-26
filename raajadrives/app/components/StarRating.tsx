@@ -31,27 +31,23 @@ export default function StarRating({ albumId, initialSum, initialCount }: StarRa
 
   const isFirstRating = initialCount === 0;
   
-  // --- HIGH LUMEN COLOR PALETTE ---
-  const staticRed = 'text-red-500'; // Brighter red
-  const staticGlow = 'drop-shadow-[0_0_15px_rgba(239,68,68,0.9)]';
-
-  const hoverColor = isFirstRating ? 'text-red-400' : 'text-amber-300'; // Vibrant colors
-  const hoverGlow = isFirstRating ? 'bg-red-500/30' : 'bg-amber-400/30';
-  const hoverShadow = isFirstRating 
-    ? 'drop-shadow-[0_0_25px_rgba(239,68,68,1)]' 
-    : 'drop-shadow-[0_0_25px_rgba(252,211,77,1)]';
+  // --- HIGH-LUMEN COLOR PALETTE ---
+  // Using red-500 because it's more vibrant than red-600 on dark backgrounds
+  const brightRed = 'text-red-500'; 
+  const brightAmber = 'text-amber-400';
+  
+  // Intense, layered glows for that "LED" look
+  const redNeon = 'drop-shadow-[0_0_10px_rgba(239,68,68,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
+  const amberNeon = 'drop-shadow-[0_0_10px_rgba(251,191,36,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
 
   const handleRating = async (value: number) => {
     if (isSubmitting || hasVoted) return;
-    if (window?.navigator?.vibrate) window.navigator.vibrate([10, 30, 10]);
+    if (window?.navigator?.vibrate) window.navigator.vibrate(10); 
     
     setIsSubmitting(true);
     const { error } = await supabase
       .from('releases')
-      .update({ 
-        rating_sum: initialSum + value, 
-        rating_count: initialCount + 1 
-      })
+      .update({ rating_sum: initialSum + value, rating_count: initialCount + 1 })
       .eq('id', albumId);
 
     if (!error) {
@@ -64,8 +60,8 @@ export default function StarRating({ albumId, initialSum, initialCount }: StarRa
   };
 
   return (
-    <div className="flex flex-col items-center md:items-start group/container select-none">
-      <div className="flex items-center gap-1">
+    <div className="flex flex-col items-center md:items-start select-none font-sans">
+      <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => {
           const isHovered = hover >= star;
           const isRated = star <= Math.round(Number(avgRating));
@@ -75,74 +71,56 @@ export default function StarRating({ albumId, initialSum, initialCount }: StarRa
               key={star}
               type="button"
               disabled={isSubmitting || hasVoted}
-              className={`relative group/star p-2 transition-all duration-500 
-                ${hasVoted ? 'cursor-default' : 'hover:-translate-y-2 active:scale-50'}`}
+              className={`relative p-1.5 transition-all duration-300 
+                ${hasVoted ? 'cursor-default' : 'hover:scale-125 active:scale-75'}`}
               onClick={() => handleRating(star)}
               onMouseEnter={() => !hasVoted && setHover(star)}
               onMouseLeave={() => setHover(0)}
             >
-              {/* Outer Neon Ring (Always slightly visible) */}
-              <div className={`absolute inset-0 rounded-full border transition-all duration-700
-                ${!hasVoted 
-                  ? `border-white/20 blur-[1px] ${isFirstRating ? 'group-hover/star:border-red-400' : 'group-hover/star:border-amber-300'}` 
-                  : 'border-transparent'}
-                ${isHovered ? `${hoverGlow} scale-125 opacity-100` : 'scale-90 opacity-40'}
-              `} />
+              {/* Laser Scanline (Subtle back-glow) */}
+              {!hasVoted && isHovered && (
+                <div className={`absolute inset-x-0 h-[2px] top-1/2 -translate-y-1/2 blur-[2px] opacity-40 animate-pulse
+                  ${isFirstRating ? 'bg-red-400' : 'bg-amber-300'}`} 
+                />
+              )}
 
               {/* The Star Icon */}
               <HiStar 
-                className={`w-8 h-8 transition-all duration-300 ease-out relative z-10
+                className={`w-6 h-6 transition-all duration-200 ease-out relative z-10
                   ${isHovered 
-                    ? `${hoverColor} scale-125 ${hoverShadow}` 
+                    ? `${isFirstRating ? brightRed : brightAmber} ${isFirstRating ? redNeon : amberNeon}` 
                     : isRated 
-                      ? `${staticRed} ${staticGlow}` 
-                      : 'text-white/40 scale-100 group-hover/star:text-white/80'
+                      ? `${brightRed} ${redNeon}` 
+                      : 'text-white/10 hover:text-white/30'
                   }
-                  ${hasVoted && isRated ? 'brightness-150 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]' : ''}
+                  ${hasVoted && isRated ? 'brightness-125' : ''}
                 `}
               />
-
-              {/* Laser Line Pulse */}
-              {!hasVoted && hover === star && (
-                <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-[2px] blur-[1px] animate-pulse
-                  ${isFirstRating ? 'bg-red-500' : 'bg-amber-300'}`} 
-                />
-              )}
             </button>
           );
         })}
         
-        {/* Neon Score Badge */}
-        <div className={`ml-6 px-5 py-2 rounded-xl border-2 transition-all duration-1000 font-mono shadow-[0_0_30px_rgba(0,0,0,0.5)]
-          ${hasVoted 
-            ? 'border-red-500/50 bg-red-950/30 shadow-[0_0_15px_rgba(239,68,68,0.2)]' 
-            : isFirstRating ? 'border-red-500/30 bg-white/5' : 'border-amber-400/30 bg-white/5'}
-        `}>
-          <span className={`text-2xl font-black italic tracking-tighter transition-colors duration-500
-            ${hasVoted ? 'text-red-400' : 'text-white'}
+        {/* Compact Digital Score */}
+        <div className="ml-4 flex items-baseline gap-1">
+          <span className={`text-xl font-black font-mono tracking-tighter transition-all duration-500
+            ${hasVoted ? `${brightRed} drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]` : 'text-white'}
           `}>
             {avgRating}
           </span>
+          <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">/ 5.0</span>
         </div>
       </div>
 
-      {/* Futuristic Status Bar */}
-      <div className="mt-4 flex items-center gap-3">
-        <div className={`w-1.5 h-1.5 rounded-full ${hasVoted ? 'bg-red-500 shadow-[0_0_8px_red]' : 'bg-white/20 animate-pulse'}`} />
-        <div className="h-5 overflow-hidden">
-          <div className={`transition-all duration-700 transform ${hasVoted ? '-translate-y-full' : 'translate-y-0'}`}>
-             <p className={`text-[11px] uppercase tracking-[0.4em] font-black ${hover > 0 ? (isFirstRating ? 'text-red-400' : 'text-amber-300') : 'text-neutral-500'}`}>
-              {hover > 0 
-                ? (isFirstRating ? "Love this ?" : "Yeah Banger") 
-                : "Awaiting Rating"}
-            </p>
-          </div>
-          <div className={`transition-all duration-700 transform ${hasVoted ? '-translate-y-full opacity-100' : 'opacity-0'}`}>
-            <p className="text-[11px] uppercase tracking-[0.4em] font-black text-red-500">
-              This Raaja Fan Logged 
-            </p>
-          </div>
-        </div>
+      {/* Ultra-Minimalist Status */}
+      <div className="mt-2 flex items-center gap-2 px-1">
+        <div className={`w-[3px] h-[3px] rounded-full transition-all duration-500 
+          ${hasVoted ? 'bg-red-500 shadow-[0_0_6px_#ef4444]' : 'bg-white/10 animate-pulse'}`} 
+        />
+        <p className={`text-[9px] uppercase tracking-[0.4em] font-black transition-colors duration-500
+          ${hasVoted ? 'text-neutral-500' : hover > 0 ? (isFirstRating ? 'text-red-500' : 'text-amber-400') : 'text-neutral-700'}
+        `}>
+          {hasVoted ? "This Raaja Fan has Logged" : hover > 0 ? "Analyzing Signal..." : "Awaiting Data"}
+        </p>
       </div>
     </div>
   );
