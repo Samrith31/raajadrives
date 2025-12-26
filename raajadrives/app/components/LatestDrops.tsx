@@ -4,9 +4,8 @@ import { useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import AlbumCard from '@/app/components/AlbumCard';
-import { Release } from '@/app/data/release'; // Import the type only
+import { Release } from '@/app/data/release';
 
-// 👇 NEW: Define props to accept data
 interface LatestDropsProps {
   releases: Release[];
 }
@@ -75,17 +74,27 @@ export default function LatestDrops({ releases }: LatestDropsProps) {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {latestReleases.map((release) => {
-             const folder = release.type === 'lprip' ? 'lprips' : 
-                            release.type === 'cdrip' ? 'cdrips' : 'flac';
+            // --- UPDATED ROUTING LOGIC ---
+            // 1. Check if it's a single first (Priority)
+            // 2. Fallback to format-based folders
+            let folder = 'flac';
+            
+            if (release.isSingle || release.type === 'single') {
+              folder = 'single';
+            } else if (release.type === 'lprip') {
+              folder = 'lprips';
+            } else if (release.type === 'cdrip') {
+              folder = 'cdrips';
+            }
 
-             return (
-                <div key={release.id} className="min-w-[200px] md:min-w-[240px] snap-start">
-                  <AlbumCard 
-                    album={release} 
-                    href={`/${folder}/${release.slug}`} 
-                  />
-                </div>
-             );
+            return (
+              <div key={release.id} className="min-w-[200px] md:min-w-[240px] snap-start">
+                <AlbumCard 
+                  album={release} 
+                  href={`/${folder}/${release.slug}`} 
+                />
+              </div>
+            );
           })}
 
           {/* "View All" Card */}

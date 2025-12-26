@@ -2,21 +2,46 @@
 
 import { useState } from 'react';
 import { supabase } from '@/app/lib/supabase';
+import { ReleaseType } from '@/app/data/release';
+
+interface ReleasePayload {
+  title: string;
+  artist: string;
+  slug: string;
+  year: number;
+  type: string;
+  quality: string;
+  download_url: string;
+  cover_url: string;
+  is_single: boolean;
+  rating_sum: number;
+  rating_count: number;
+}
 
 export default function UploadPage() {
   const [loading, setLoading] = useState(false);
   
-  // Form State
   const [formData, setFormData] = useState({
     title: '',
     artist: 'Ilaiyaraaja',
-    year: '',
+    year: new Date().getFullYear().toString(),
     slug: '',
-    type: 'hires-flac',
+    type: 'hires-flac' as ReleaseType | 'single',
     quality: '',
     downloadUrl: '',
+    isSingle: false,
   });
+  
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setPreview(URL.createObjectURL(selectedFile));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,17 +50,15 @@ export default function UploadPage() {
     try {
       let coverUrl = '';
 
-      // 1. Upload Image if exists
       if (file) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${formData.slug}-${Date.now()}.${fileExt}`;
-        const { data, error } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('covers')
           .upload(fileName, file);
 
-        if (error) throw error;
+        if (uploadError) throw uploadError;
         
-        // Get the Public URL
         const { data: publicUrlData } = supabase.storage
           .from('covers')
           .getPublicUrl(fileName);
@@ -43,100 +66,155 @@ export default function UploadPage() {
         coverUrl = publicUrlData.publicUrl;
       }
 
-      // 2. Insert Data into Database
+      // --- THE FIX: FORCING THE BOOLEAN ---
+      // This ensures if either the toggle is true OR the type is 'single', 
+      // the database always receives TRUE for is_single.
+      const finalIsSingle = formData.isSingle || formData.type === 'single';
+
+      const payload: ReleasePayload = {
+        title: formData.title,
+        artist: formData.artist,
+        slug: formData.slug,
+        year: parseInt(formData.year, 10),
+        type: formData.type,
+        quality: formData.quality,
+        download_url: formData.downloadUrl,
+        cover_url: coverUrl,
+        is_single: finalIsSingle,
+        rating_sum: 0,
+        rating_count: 0
+      };
+
       const { error: dbError } = await supabase
         .from('releases')
-        .insert([{
-          title: formData.title,
-          artist: formData.artist,
-          slug: formData.slug,
-          year: parseInt(formData.year),
-          type: formData.type,
-          quality: formData.quality,
-          download_url: formData.downloadUrl,
-          cover_url: coverUrl
-        }]);
+        .insert([payload]);
 
       if (dbError) throw dbError;
 
-      alert('Album Uploaded Successfully!');
-      // Reset form...
+      alert(`${finalIsSingle ? 'Single' : 'Album'} Uploaded Successfully!`);
       
-    } catch (error) {
-      console.error(error);
-      alert('Error uploading album');
+      setFormData({ ...formData, title: '', slug: '', quality: '', downloadUrl: '' });
+      setFile(null);
+      setPreview(null);
+      
+    } catch (error: unknown) {
+      let errorMessage = 'An unknown error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      alert(`Upload failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-10 flex justify-center">
-      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-        <h1 className="text-2xl font-bold mb-6">Upload New Album</h1>
-
-        <input 
-          type="text" placeholder="Title (e.g. Thalapathi)" required
-          className="w-full p-2 bg-neutral-900 border border-neutral-800 rounded"
-          onChange={(e) => {
-            setFormData({...formData, title: e.target.value});
-            // Auto-generate slug
-            setFormData(prev => ({...prev, slug: e.target.value.toLowerCase().replace(/ /g, '-')}));
-          }}
-        />
-
-        <input 
-          type="text" placeholder="Slug (thalapathi-1991)" required
-          value={formData.slug}
-          className="w-full p-2 bg-neutral-900 border border-neutral-800 rounded"
-          onChange={(e) => setFormData({...formData, slug: e.target.value})}
-        />
-
-        <div className="flex gap-4">
-          <input 
-            type="number" placeholder="Year" required
-            className="w-1/2 p-2 bg-neutral-900 border border-neutral-800 rounded"
-            onChange={(e) => setFormData({...formData, year: e.target.value})}
-          />
-          <select 
-            className="w-1/2 p-2 bg-neutral-900 border border-neutral-800 rounded"
-            onChange={(e) => setFormData({...formData, type: e.target.value})}
+    <div className="min-h-screen bg-neutral-950 text-white p-6 md:p-20 flex justify-center">
+      <form onSubmit={handleSubmit} className="w-full max-w-xl space-y-6 bg-neutral-900/50 p-8 rounded-2xl border border-white/5 backdrop-blur-md">
+        <header className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-black uppercase tracking-tighter">New Entry</h1>
+          <button 
+            type="button"
+            onClick={() => setFormData({
+              ...formData, 
+              isSingle: !formData.isSingle, 
+              type: !formData.isSingle ? 'single' : 'hires-flac'
+            })}
+            className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all
+              ${formData.isSingle ? 'bg-amber-500 text-black' : 'bg-neutral-800 text-neutral-400'}`}
           >
-            <option value="hires-flac">Hi-Res FLAC</option>
-            <option value="cd-flac">CD FLAC</option>
-            <option value="cdrip">CD Rip</option>
-            <option value="lprip">LP Rip</option>
-          </select>
-        </div>
+            {formData.isSingle ? 'Single Release' : 'Full Album'}
+          </button>
+        </header>
 
-        <input 
-          type="text" placeholder="Quality (e.g. 24bit / 96kHz)" 
-          className="w-full p-2 bg-neutral-900 border border-neutral-800 rounded"
-          onChange={(e) => setFormData({...formData, quality: e.target.value})}
-        />
+        <div className="space-y-4">
+          <input 
+            type="text" placeholder="Entry Title" required
+            value={formData.title}
+            className="w-full p-3 bg-black border border-white/10 rounded-xl focus:border-red-600 outline-none transition-colors"
+            onChange={(e) => {
+              const val = e.target.value;
+              const generatedSlug = val.toLowerCase().trim()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+              setFormData({...formData, title: val, slug: generatedSlug});
+            }}
+          />
 
-        <input 
-          type="url" placeholder="Download Link (Drive/Mega)" required
-          className="w-full p-2 bg-neutral-900 border border-neutral-800 rounded"
-          onChange={(e) => setFormData({...formData, downloadUrl: e.target.value})}
-        />
+          <input 
+            type="text" placeholder="Slug (auto-generated)" required
+            value={formData.slug}
+            className="w-full p-3 bg-black border border-white/10 rounded-xl text-neutral-500 font-mono text-xs"
+            onChange={(e) => setFormData({...formData, slug: e.target.value})}
+          />
 
-        <div className="border border-dashed border-neutral-700 p-4 rounded text-center">
-          <label className="cursor-pointer">
-            <span className="text-sm text-neutral-400">Upload Cover Image</span>
+          <div className="flex gap-4">
             <input 
-              type="file" accept="image/*" className="hidden" 
-              onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+              type="number" placeholder="Year" required
+              value={formData.year}
+              className="w-1/2 p-3 bg-black border border-white/10 rounded-xl focus:border-red-600 outline-none"
+              onChange={(e) => setFormData({...formData, year: e.target.value})}
             />
-          </label>
-          {file && <p className="text-green-500 text-xs mt-2">{file.name}</p>}
+            <select 
+              value={formData.type}
+              className="w-1/2 p-3 bg-black border border-white/10 rounded-xl focus:border-red-600 outline-none"
+              onChange={(e) => {
+                const newType = e.target.value;
+                setFormData({
+                  ...formData, 
+                  type: newType as ReleaseType | 'single',
+                  isSingle: newType === 'single' // Auto-set boolean if type is changed
+                });
+              }}
+            >
+              <option value="hires-flac">Hi-Res FLAC</option>
+              <option value="cd-flac">CD FLAC</option>
+              <option value="cdrip">CD Rip</option>
+              <option value="lprip">LP Rip</option>
+              <option value="single">Single Song</option>
+            </select>
+          </div>
+
+          <input 
+            type="text" placeholder="Technical Quality" 
+            value={formData.quality}
+            className="w-full p-3 bg-black border border-white/10 rounded-xl focus:border-red-600 outline-none"
+            onChange={(e) => setFormData({...formData, quality: e.target.value})}
+          />
+
+          <input 
+            type="url" placeholder="Direct Download URL" required
+            value={formData.downloadUrl}
+            className="w-full p-3 bg-black border border-white/10 rounded-xl focus:border-red-600 outline-none"
+            onChange={(e) => setFormData({...formData, downloadUrl: e.target.value})}
+          />
+
+          <div className="relative group overflow-hidden rounded-xl border-2 border-dashed border-white/10 hover:border-red-600/50 transition-colors">
+            <input 
+              type="file" accept="image/*" id="cover-upload" className="hidden" 
+              onChange={handleFileChange}
+            />
+            <label htmlFor="cover-upload" className="cursor-pointer flex flex-col items-center justify-center py-8">
+              {preview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={preview} alt="Preview" className="h-32 w-32 object-cover rounded shadow-2xl mb-2" />
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm text-neutral-400">Drag artwork here or click</p>
+                  <p className="text-[10px] text-neutral-600 uppercase mt-1 italic tracking-tighter">Square (500x500)</p>
+                </div>
+              )}
+            </label>
+          </div>
         </div>
 
         <button 
           disabled={loading}
-          className="w-full bg-red-600 py-3 rounded font-bold hover:bg-red-500 transition disabled:opacity-50"
+          className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95
+            ${loading ? 'bg-neutral-800' : 'bg-red-600 hover:bg-red-500 shadow-red-900/20'}`}
         >
-          {loading ? 'Uploading...' : 'Upload Album'}
+          {loading ? 'Processing Signal...' : `Upload ${formData.isSingle ? 'Single' : 'Album'}`}
         </button>
       </form>
     </div>

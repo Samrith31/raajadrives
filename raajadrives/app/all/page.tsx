@@ -15,6 +15,7 @@ interface DatabaseRow {
   type: string;
   cover_url: string | null;
   quality: string | null;
+  is_single: boolean; // Added this to fetch the flag from DB
 }
 
 interface Album {
@@ -26,11 +27,12 @@ interface Album {
   type: string;
   coverUrl: string | null;
   quality: string | null;
-  linkPrefix: string; // Helper for the URL
+  linkPrefix: string; 
+  isSingle: boolean; // Added for UI checks
 }
 
 export default async function AllUploadsPage() {
-  // 1. Fetch EVERYTHING (No filters on 'type')
+  // 1. Fetch EVERYTHING
   const { data, error } = await supabase
     .from('releases')
     .select('*')
@@ -40,13 +42,20 @@ export default async function AllUploadsPage() {
     console.error("Error fetching catalog:", error);
   }
 
-  // 2. Map Data & Determine correct URL path
+  // 2. Map Data & Fix Routing Logic
   const albums: Album[] = (data as DatabaseRow[] | null)?.map((item) => {
     
-    // Logic to decide where the link goes
+    // --- UPDATED ROUTING LOGIC ---
     let prefix = '/flac'; // Default
-    if (item.type === 'lprip') prefix = '/lprips';
-    if (item.type === 'cdrip') prefix = '/cdrips';
+
+    // Logic: If it is marked as a single in DB, force /single prefix
+    if (item.is_single === true || item.type === 'single') {
+      prefix = '/single';
+    } else if (item.type === 'lprip') {
+      prefix = '/lprips';
+    } else if (item.type === 'cdrip') {
+      prefix = '/cdrips';
+    }
 
     return {
       id: item.id,
@@ -58,13 +67,14 @@ export default async function AllUploadsPage() {
       coverUrl: item.cover_url,
       quality: item.quality,
       linkPrefix: prefix,
+      isSingle: item.is_single || item.type === 'single'
     };
   }) || [];
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white p-6 md:p-12 relative isolate">
       
-      {/* Background: Neutral White/Grey Gradient for the "Master List" */}
+      {/* Background Ambience */}
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-800 via-black to-black" />
 
       <div className="max-w-4xl mx-auto">
@@ -80,7 +90,6 @@ export default async function AllUploadsPage() {
           {albums.map((album) => (
             <Link 
               key={album.id} 
-              // 👇 Dynamic Link based on album type
               href={`${album.linkPrefix}/${album.slug}`} 
               className="group block"
             >
@@ -99,13 +108,15 @@ export default async function AllUploadsPage() {
                 {/* Details */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    {/* Format Badge: Changes color based on type */}
+                    {/* Format Badge: Added Amber for Singles */}
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide text-black ${
+                      album.isSingle ? 'bg-amber-500' :
                       album.type === 'lprip' ? 'bg-purple-500' :
                       album.type === 'cdrip' ? 'bg-yellow-500' :
                       'bg-white'
                     }`}>
-                      {album.type === 'lprip' ? 'VINYL' : 
+                      {album.isSingle ? 'SINGLE' : 
+                       album.type === 'lprip' ? 'VINYL' : 
                        album.type === 'cdrip' ? 'CD RIP' : 'DIGITAL'}
                     </span>
                     
@@ -137,11 +148,10 @@ export default async function AllUploadsPage() {
 
           {albums.length === 0 && (
             <div className="text-center py-20 text-neutral-500 border border-dashed border-neutral-800 rounded-xl">
-              <p>No albums found in the database.</p>
+              <p>No entries found in the database.</p>
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

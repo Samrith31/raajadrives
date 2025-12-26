@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 export const revalidate = 0;
 
+// 1. Updated Interface with is_single toggle
 interface DatabaseRow {
   id: string;
   title: string;
@@ -13,10 +14,10 @@ interface DatabaseRow {
   type: string;
   cover_url: string | null;
   quality: string | null;
+  is_single: boolean; // Added this
 }
 
 export default async function LatestPage() {
-  // Fetch the latest 16 releases
   const { data } = await supabase
     .from('releases')
     .select('*')
@@ -47,11 +48,19 @@ export default async function LatestPage() {
 
         {/* --- GRID LAYOUT --- */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {albums.map((album, index) => {
-            // Determine Link Prefix
+          {albums.map((album) => {
+            // --- 2. FIXED ROUTING LOGIC ---
+            // Priority: If is_single is true, force /single path
+            // Otherwise, use the type-based path
             let prefix = '/flac';
-            if (album.type === 'lprip') prefix = '/lprips';
-            if (album.type === 'cdrip') prefix = '/cdrips';
+            
+            if (album.is_single === true) {
+              prefix = '/single'; 
+            } else if (album.type === 'lprip') {
+              prefix = '/lprips';
+            } else if (album.type === 'cdrip') {
+              prefix = '/cdrips';
+            }
 
             return (
               <Link 
@@ -71,8 +80,9 @@ export default async function LatestPage() {
                   {/* Glass Overlay on Hover */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 backdrop-blur-[2px]">
                     <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                       <span className="inline-block px-2 py-1 bg-red-600 text-[10px] font-bold text-white rounded mb-3">
-                         {album.type.toUpperCase()}
+                       {/* 3. DYNAMIC TAG COLOR (Amber for Single, Red for Album) */}
+                       <span className={`inline-block px-2 py-1 text-[10px] font-bold text-white rounded mb-3 ${album.is_single ? 'bg-amber-500 text-black' : 'bg-red-600'}`}>
+                         {album.is_single ? 'SINGLE' : album.type.toUpperCase()}
                        </span>
                        <h3 className="text-xl font-bold text-white leading-tight mb-1">{album.title}</h3>
                        <p className="text-neutral-300 text-sm truncate">{album.artist}</p>
@@ -89,7 +99,7 @@ export default async function LatestPage() {
                   )}
                 </div>
 
-                {/* Visible Info (Mobile/Default) */}
+                {/* Visible Info */}
                 <div className="mt-4 flex justify-between items-start">
                   <div className="min-w-0">
                     <h3 className="text-white font-medium truncate group-hover:text-red-500 transition-colors">

@@ -119,7 +119,7 @@ export default function StarRating({ albumId, initialSum, initialCount }: StarRa
         <p className={`text-[9px] uppercase tracking-[0.4em] font-black transition-colors duration-500
           ${hasVoted ? 'text-neutral-500' : hover > 0 ? (isFirstRating ? 'text-red-500' : 'text-amber-400') : 'text-neutral-200'}
         `}>
-          {hasVoted ? "This Raaja Fan has Logged" : hover > 0 ? "Logging..." : "Rate this Album"}
+          {hasVoted ? "This Raaja Fan has Logged" : hover > 0 ? "Logging..." : "Rate this Beauty"}
         </p>
       </div>
     </div>

@@ -1,18 +1,12 @@
-// app/page.tsx
 import { supabase } from '@/app/lib/supabase';
 import { Release, ReleaseType } from '@/app/data/release';
 import AlbumGrid from '@/app/components/AlbumGrid';
 import SectionHeader from '@/app/components/ui/SectionHeader';
-
-// ✅ CORRECTED IMPORT: Importing 'HeroSlideshow' from the file 'HeroSection'
 import HeroSlideshow from '@/app/components/HeroSection'; 
-
 import LatestDrops from '@/app/components/LatestDrops';
 
-// 0. Disable caching so you always see new uploads immediately
 export const revalidate = 0;
 
-// 1. Define the shape of the data COMING from Supabase (snake_case)
 interface DatabaseRow {
   id: string;
   created_at: string;
@@ -24,9 +18,9 @@ interface DatabaseRow {
   quality: string | null;
   cover_url: string | null;
   download_url: string;
+  is_single?: boolean; // Added for routing
 }
 
-// 2. Fetch and Transform Function
 async function getAlbums(): Promise<Release[]> {
   const { data, error } = await supabase
     .from('releases')
@@ -38,7 +32,6 @@ async function getAlbums(): Promise<Release[]> {
     return [];
   }
 
-  // 3. Map Database columns (snake_case) to App Type (camelCase)
   return (data as DatabaseRow[]).map((item) => ({
     id: item.id,
     title: item.title,
@@ -48,7 +41,8 @@ async function getAlbums(): Promise<Release[]> {
     type: item.type as ReleaseType, 
     quality: item.quality || undefined,
     cover: item.cover_url || '/images/placeholder.jpg', 
-    downloadUrl: item.download_url
+    downloadUrl: item.download_url,
+    isSingle: item.is_single || false // Pass this down to AlbumGrid
   }));
 }
 
@@ -61,28 +55,40 @@ export default async function HomePage() {
       {/* Hero Section */}
       <HeroSlideshow />
 
-      {/* Latest Drops (Using Real Data) */}
+      {/* Latest Drops */}
       <LatestDrops releases={releases} />
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 mt-16 space-y-20">
         
-        {/* Digital Downloads */}
+        {/* 1. Digital Downloads */}
         <section>
           <SectionHeader
             title="Digital Downloads"
-            subtitle="Hi-Res & 16-bit FLAC and Wav"
+            subtitle="Hi-Res & 16-bit FLAC/WAV Albums"
             href="/flac"
           />
           <AlbumGrid
             items={releases.filter(
-              (r) => r.type === 'hires-flac' || r.type === 'cd-flac'
+              (r) => (r.type === 'hires-flac' || r.type === 'cd-flac') && !r.isSingle
             )}
             basePath="/flac"
           />
         </section>
 
-        {/* CD Rips */}
+        {/* 2. 👇 NEW: Singles & Track Releases */}
+        <section>
+          <SectionHeader
+            title="Singles & EPs"
+            subtitle="Individual Track Fidelity Releases"
+            href="/singles"
+          />
+          <AlbumGrid
+            items={releases.filter((r) => r.type === 'single' || r.isSingle)}
+            basePath="/single" // This ensures they link to your new single page
+          />
+        </section>
+
+        {/* 3. CD Rips */}
         <section>
           <SectionHeader
             title="CD Rips"
@@ -90,12 +96,12 @@ export default async function HomePage() {
             href="/cdrips"
           />
           <AlbumGrid
-            items={releases.filter((r) => r.type === 'cdrip')}
+            items={releases.filter((r) => r.type === 'cdrip' && !r.isSingle)}
             basePath="/cdrips"
           />
         </section>
 
-        {/* LP Rips */}
+        {/* 4. LP Rips */}
         <section>
           <SectionHeader
             title="LP Rips"
@@ -103,7 +109,7 @@ export default async function HomePage() {
             href="/lprips"
           />
           <AlbumGrid
-            items={releases.filter((r) => r.type === 'lprip')}
+            items={releases.filter((r) => r.type === 'lprip' && !r.isSingle)}
             basePath="/lprips"
           />
         </section>
