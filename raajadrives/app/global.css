@@ -37,6 +37,15 @@
   }
 } 
 
+@keyframes star-breathe {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.6)); }
+  50% { filter: drop-shadow(0 0 20px rgba(220, 38, 38, 0.9)); }
+}
+
+.animate-star-glow {
+  animation: star-breathe 2s infinite ease-in-out;
+}
+
 /* --- CUSTOM UTILITIES & MOBILE FIXES --- */
 
 @layer base {
@@ -58,6 +67,17 @@
 /* Handles the "Notch" area on iPhones for fixed navigation */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+.text-red-600.drop-shadow-glow {
+  filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6));
+}
+
+/* Smooth color transition when hovering or clicking stars */
+.group\/rating button svg {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              color 0.2s ease, 
+              filter 0.2s ease;
 }
 
 /* --- CUSTOM CLASSES --- */

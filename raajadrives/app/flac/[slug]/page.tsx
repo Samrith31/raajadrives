@@ -4,8 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import CommentSection from '@/app/components/CommentSection';
-// 👇 Import the new slideshow component
 import BackgroundSlideshow from '@/app/components/BackgroundSlideshow';
+import StarRating from '@/app/components/StarRating';
 
 export const revalidate = 0;
 
@@ -13,6 +13,7 @@ interface AlbumPageProps {
   params: Promise<{ slug: string }>;
 }
 
+// 1. Defining the exact shape of the data from Supabase
 interface DatabaseRow {
   id: string;
   created_at: string;
@@ -24,9 +25,12 @@ interface DatabaseRow {
   quality: string | null;
   cover_url: string | null;
   download_url: string;
+  rating_sum: number | null;
+  rating_count: number | null;
 }
 
-async function getAlbum(slug: string): Promise<Release | null> {
+// 2. Specify DatabaseRow | null instead of any | null
+async function getAlbum(slug: string): Promise<DatabaseRow | null> {
   const { data, error } = await supabase
     .from('releases')
     .select('*')
@@ -35,19 +39,7 @@ async function getAlbum(slug: string): Promise<Release | null> {
 
   if (error || !data) return null;
 
-  const item = data as DatabaseRow;
-
-  return {
-    id: item.id,
-    title: item.title,
-    artist: item.artist,
-    slug: item.slug,
-    year: item.year,
-    type: item.type as ReleaseType,
-    quality: item.quality || undefined,
-    cover: item.cover_url || '/images/placeholder.jpg',
-    downloadUrl: item.download_url
-  };
+  return data as DatabaseRow;
 }
 
 export default async function AlbumPage({ params }: AlbumPageProps) {
@@ -60,17 +52,14 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center py-20 px-6 relative isolate">
-      
-      {/* 👇 REPLACED STATIC IMAGE WITH SLIDESHOW COMPONENT */}
       <BackgroundSlideshow />
 
-      {/* --- Main Album Card --- */}
       <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-10 items-center mb-16 z-10">
         
         {/* Left Col: Cover Art */}
         <div className="relative aspect-square w-full max-w-[400px] mx-auto rounded-xl shadow-2xl shadow-black/70 overflow-hidden border border-white/10 group">
           <Image
-            src={album.cover}
+            src={album.cover_url || '/images/placeholder.jpg'}
             alt={album.title}
             fill
             className="object-cover"
@@ -95,6 +84,15 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
             </p>
           </div>
 
+          {/* Star Rating Section */}
+          <div className="py-2 flex justify-center md:justify-start border-y border-white/5 md:border-none">
+             <StarRating 
+               albumId={album.id} 
+               initialSum={Number(album.rating_sum) || 0} 
+               initialCount={Number(album.rating_count) || 0} 
+             />
+          </div>
+
           <div className="flex flex-col gap-1 text-sm text-neutral-400 font-mono border-l-2 border-neutral-700 pl-4 mx-auto md:mx-0 max-w-max bg-black/30 p-2 rounded-r-lg backdrop-blur-sm">
             <span>Year: {album.year || 'N/A'}</span>
             <span>
@@ -107,9 +105,9 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
 
           <div className="pt-4">
             <Link
-              href={album.downloadUrl}
+              href={album.download_url}
               target="_blank"
-              className="inline-flex items-center justify-center w-full md:w-auto px-8 py-4 font-bold text-white bg-red-600 rounded-full hover:bg-red-500 hover:scale-105 transition-all shadow-lg shadow-red-900/30"
+              className="inline-flex items-center justify-center w-full md:w-auto px-8 py-4 font-bold text-white bg-red-600 rounded-full hover:bg-red-500 hover:scale-105 transition-all shadow-lg shadow-red-900/30 active:scale-95"
             >
               Download Album
             </Link>
@@ -118,14 +116,11 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
             </p>
           </div>
         </div>
-
       </div>
 
-      {/* --- Comment Section --- */}
       <div className="w-full max-w-2xl z-10">
         <CommentSection slug={album.slug} />
       </div>
-
     </div>
   );
 }
