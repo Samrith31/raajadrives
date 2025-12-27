@@ -98,7 +98,7 @@ export default async function SinglePage({ params }: SinglePageProps) {
         {/* Technical Specs Grid */}
         <div className="grid grid-cols-2 gap-4 w-full mb-12 font-mono">
           <div className="bg-white/[0.03] border border-white/5 p-5 rounded-2xl text-left hover:border-red-500/30 transition-colors group">
-            <span className="block text-[10px] text-neutral-500 uppercase tracking-widest mb-2 group-hover:text-red-500 transition-colors">Digital Source</span>
+            <span className="block text-[10px] text-neutral-500 uppercase tracking-widest mb-2 group-hover:text-red-500 transition-colors">Source</span>
             <span className="text-sm text-white font-bold uppercase">
                 {single.type.replace('-', ' ')}
             </span>

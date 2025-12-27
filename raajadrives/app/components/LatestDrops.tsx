@@ -1,9 +1,12 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+// Removed HiRefresh import
+import Image from 'next/image'; // Add Image import
 import Link from 'next/link';
 import AlbumCard from '@/app/components/AlbumCard';
+import RouletteModal from '@/app/components/RouletteModal';
 import { Release } from '@/app/data/release';
 
 interface LatestDropsProps {
@@ -12,8 +15,8 @@ interface LatestDropsProps {
 
 export default function LatestDrops({ releases }: LatestDropsProps) {
   const scrollContainer = useRef<HTMLDivElement>(null);
+  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
 
-  // Take the first 5 items from the real data
   const latestReleases = releases.slice(0, 5);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -74,11 +77,7 @@ export default function LatestDrops({ releases }: LatestDropsProps) {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {latestReleases.map((release) => {
-            // --- UPDATED ROUTING LOGIC ---
-            // 1. Check if it's a single first (Priority)
-            // 2. Fallback to format-based folders
             let folder = 'flac';
-            
             if (release.isSingle || release.type === 'single') {
               folder = 'single';
             } else if (release.type === 'lprip') {
@@ -97,7 +96,6 @@ export default function LatestDrops({ releases }: LatestDropsProps) {
             );
           })}
 
-          {/* "View All" Card */}
           <div className="min-w-[200px] md:min-w-[240px] snap-start flex items-center justify-center">
             <Link 
               href="/latest"
@@ -111,7 +109,41 @@ export default function LatestDrops({ releases }: LatestDropsProps) {
           </div>
         </div>
 
+        {/* --- DAILY SPIN BUTTON WITH LOGO --- */}
+        <div className="mt-4 flex justify-center md:justify-start">
+          <button
+            onClick={() => setIsRouletteOpen(true)}
+            className="group relative flex items-center gap-3 px-8 py-4 bg-neutral-900 border border-white/5 rounded-2xl overflow-hidden transition-all hover:border-red-500/50 active:scale-95"
+          >
+            {/* Background Glow */}
+            <div className="absolute inset-0 bg-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            {/* Logo Container (Spins on hover) */}
+            <div className="relative z-10 w-10 h-10 rounded-full overflow-hidden border-2 border-red-600 shadow-[0_0_15px_rgba(239,68,68,0.5)] group-hover:animate-spin-slow">
+               <Image
+                              src="/images/logo-2.jpeg" 
+                              alt="Raaja Drives Logo"
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+            
+            <div className="relative z-10 text-left">
+              <span className="block text-[10px] font-black text-red-500 uppercase tracking-[0.2em] leading-none mb-1">Pick</span>
+              <span className="block text-sm font-bold text-white uppercase tracking-tighter italic">Daily Spin</span>
+            </div>
+
+            <ArrowRight className="relative z-10 w-4 h-4 text-neutral-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
+          </button>
+        </div>
+
       </div>
+
+      {/* --- ROULETTE MODAL --- */}
+      <RouletteModal 
+        isOpen={isRouletteOpen} 
+        onClose={() => setIsRouletteOpen(false)} 
+      />
     </section>
   );
 }

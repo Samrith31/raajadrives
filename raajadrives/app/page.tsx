@@ -80,7 +80,7 @@ export default async function HomePage() {
           <SectionHeader
             title="Singles & EPs"
             subtitle="Individual Track Fidelity Releases"
-            href="/singles"
+            href="/single"
           />
           <AlbumGrid
             items={releases.filter((r) => r.type === 'single' || r.isSingle)}
