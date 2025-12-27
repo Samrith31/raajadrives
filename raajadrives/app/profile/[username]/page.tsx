@@ -1,0 +1,143 @@
+'use client';
+
+import React, { useEffect, useState, use } from 'react';
+import { supabase } from '@/app/lib/supabase';
+import Image from 'next/image';
+import AlbumCard from '@/app/components/AlbumCard';
+import { HiHeart, HiCollection, HiCalendar, HiBadgeCheck } from 'react-icons/hi';
+import { Release } from '@/app/data/release';
+
+interface UserProfile {
+  id: string;
+  username: string;
+  created_at: string;
+}
+
+interface LikeJoinResponse {
+  release_id: string;
+  releases: Release; 
+}
+
+export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
+  const resolvedParams = use(params);
+  const { username } = resolvedParams;
+  
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [likedReleases, setLikedReleases] = useState<Release[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id, username, created_at')
+        .eq('username', username)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData as UserProfile);
+
+        const { data: likesData } = await supabase
+          .from('likes')
+          .select(`release_id, releases (*)`)
+          .eq('user_id', profileData.id);
+
+        if (likesData) {
+          const formatted = (likesData as unknown as LikeJoinResponse[])
+            .map(item => item.releases)
+            .filter((r): r is Release => r !== null);
+          
+          setLikedReleases(formatted);
+        }
+      }
+      setLoading(false);
+    }
+    fetchProfile();
+  }, [username]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-2 border-red-600/20 border-t-red-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-neutral-950 pb-24 md:pb-12">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] bg-gradient-to-b from-red-900/5 to-transparent" />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-6 md:pt-10">
+        
+        {/* --- LOGO-CENTRIC HEADER --- */}
+        <div className="relative overflow-hidden rounded-[2rem] md:rounded-[3rem] bg-neutral-900/30 border border-white/5 backdrop-blur-2xl p-6 md:p-10 mb-8 group">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 relative z-10">
+            
+            {/* Hardcoded Logo (Replaces Avatar) */}
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-10 group-hover:opacity-25 transition-opacity" />
+              <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full border border-red-600/30 p-1.5 bg-neutral-950 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
+                <div className="relative w-full h-full rounded-full overflow-hidden">
+                  <Image 
+                    src="/images/logo-2.jpeg" 
+                    alt="Archive Logo" 
+                    fill 
+                    className="object-cover" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center md:text-left flex-1 min-w-0">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600/10 border border-red-600/20 text-red-500 text-[9px] font-black uppercase tracking-widest mb-3">
+                <HiBadgeCheck size={12} />
+                Verified Archivist
+              </div>
+              
+              <h1 className="text-3xl md:text-5xl font-black text-white italic uppercase tracking-tighter leading-tight mb-2 truncate">
+                {profile?.username}
+              </h1>
+
+              <div className="flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-2 text-neutral-500 text-[9px] font-bold uppercase tracking-widest">
+                <div className="flex items-center gap-1.5">
+                  <HiCalendar className="text-red-600" size={14} />
+                  Joined {profile ? new Date(profile.created_at).getFullYear() : '2025'}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <HiCollection className="text-red-600" size={14} />
+                  {likedReleases.length} Masterpieces Saved
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* --- SECTION HEADER --- */}
+        <div className="flex items-center justify-between mb-6 px-1">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-[2px] bg-red-600" />
+            <h2 className="text-sm md:text-lg font-black text-white uppercase italic tracking-tight">
+              Personal <span className="text-neutral-500 font-medium">Collection</span>
+            </h2>
+          </div>
+        </div>
+
+        {/* --- GRID --- */}
+        {likedReleases.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6">
+            {likedReleases.map((album) => (
+              <AlbumCard key={album.id} album={album} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 rounded-[2rem] border border-dashed border-white/5 bg-neutral-900/10">
+            <HiHeart className="text-neutral-800 text-3xl mb-3" />
+            <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-[0.2em]">Drive Empty</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

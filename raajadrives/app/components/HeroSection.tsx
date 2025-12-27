@@ -47,6 +47,7 @@ const heroSlides = [
     quote: "There is no difference between the howl of a dog and the songs of vidwans.",
     subQuote: "Finding melody in the most unexpected places."
   },
+  
 // {
 //   id: 7,
 //   image: '/images/raaja-7.jpeg',

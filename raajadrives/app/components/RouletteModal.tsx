@@ -170,7 +170,7 @@ export default function RouletteModal({ isOpen, onClose }: { isOpen: boolean, on
                 ) : (
                   <div className="text-center">
                     <p className="text-neutral-500 text-xs font-medium italic px-4 leading-relaxed">
-                      {spinning ? "Processing frequencies..." : "Discover your next Maestro track."}
+                      {spinning ? "Finding you..." : "Discover your next Maestro track."}
                     </p>
                   </div>
                 )}

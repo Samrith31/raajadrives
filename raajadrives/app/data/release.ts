@@ -13,6 +13,7 @@ export interface Release {
   year?: number;
   type: ReleaseType;
   cover: string;
+  cover_url?: string | null;
   downloadUrl: string;
   quality?: string;
   
@@ -25,4 +26,5 @@ export interface Release {
   
   // 👇 3. Optional: Added for technical track metadata
   duration?: string; 
+  
 }
