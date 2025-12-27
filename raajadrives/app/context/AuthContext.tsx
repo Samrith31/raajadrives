@@ -23,32 +23,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Function to fetch username from public.profiles
-    const fetchProfile = async (userId: string) => {
-      const { data } = await supabase
+  // Function to fetch username from public.profiles
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
         .from('profiles')
         .select('username')
         .eq('id', userId)
         .single();
+      
+      if (error) throw error;
       if (data) setUsername(data.username);
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+      setUsername(null);
+    }
+  };
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        // 1. Get initial session with error handling
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          // If the token is invalid/not found, clear the local state
+          if (error.message.includes('Refresh Token Not Found')) {
+            console.warn("Stale session detected. Clearing local auth...");
+            await supabase.auth.signOut();
+          }
+          throw error;
+        }
+
+        setUser(session?.user ?? null);
+        if (session?.user) await fetchProfile(session.user.id);
+      } catch (err) {
+        console.error("Auth initialization failed:", err);
+        setUser(null);
+        setUsername(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // 1. Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      setLoading(false);
-    });
+    initializeAuth();
 
-    // 2. Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // 2. Listen for auth state changes (Login, Logout, Token Refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
+      
       if (session?.user) {
-        fetchProfile(session.user.id);
+        await fetchProfile(session.user.id);
       } else {
         setUsername(null);
       }
+
+      // Ensure loading is turned off if an event occurs before init finishes
       setLoading(false);
     });
 
@@ -56,7 +86,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setUsername(null);
+    } catch (err) {
+      console.error("Sign out error:", err);
+    }
   };
 
   return (

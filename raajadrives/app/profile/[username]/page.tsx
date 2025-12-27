@@ -4,8 +4,10 @@ import React, { useEffect, useState, use } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import Image from 'next/image';
 import AlbumCard from '@/app/components/AlbumCard';
-import { HiHeart, HiCollection, HiCalendar, HiBadgeCheck } from 'react-icons/hi';
+import { HiHeart, HiCollection, HiCalendar, HiBadgeCheck, HiLogout } from 'react-icons/hi'; // Added HiLogout
 import { Release } from '@/app/data/release';
+import { useAuth } from '@/app/context/AuthContext'; // Import useAuth
+import { useRouter } from 'next/navigation';
 
 interface UserProfile {
   id: string;
@@ -22,9 +24,18 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const resolvedParams = use(params);
   const { username } = resolvedParams;
   
+  const { user, signOut } = useAuth(); // Destructure signOut and user
+  const router = useRouter();
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [likedReleases, setLikedReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Logout Handler
+  const handleLogout = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   useEffect(() => {
     async function fetchProfile() {
@@ -63,6 +74,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     );
   }
 
+  // Only show logout if the profile being viewed is the logged-in user's profile
+  const isOwnProfile = user?.id === profile?.id;
+
   return (
     <div className="min-h-screen bg-neutral-950 pb-24 md:pb-12">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -73,9 +87,19 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         
         {/* --- LOGO-CENTRIC HEADER --- */}
         <div className="relative overflow-hidden rounded-[2rem] md:rounded-[3rem] bg-neutral-900/30 border border-white/5 backdrop-blur-2xl p-6 md:p-10 mb-8 group">
+          
+          {/* LOGOUT BUTTON (Top Right) */}
+          {isOwnProfile && (
+            <button 
+              onClick={handleLogout}
+              className="absolute top-4 right-4 md:top-8 md:right-8 z-20 p-3 rounded-full bg-white/5 border border-white/10 text-neutral-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all active:scale-90"
+              title="End Session"
+            >
+              <HiLogout size={20} className="md:w-6 md:h-6" />
+            </button>
+          )}
+
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 relative z-10">
-            
-            {/* Hardcoded Logo (Replaces Avatar) */}
             <div className="relative shrink-0">
               <div className="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-10 group-hover:opacity-25 transition-opacity" />
               <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full border border-red-600/30 p-1.5 bg-neutral-950 shadow-[0_0_20px_rgba(239,68,68,0.1)]">

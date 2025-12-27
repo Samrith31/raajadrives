@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { HiHome, HiMusicNote, HiSearch, HiX, HiUserCircle } from 'react-icons/hi'; // Added HiUserCircle
+import { HiHome, HiMusicNote, HiSearch, HiX, HiUserCircle, HiFolder } from 'react-icons/hi';
 import { supabase } from '@/app/lib/supabase';
-import { useAuth } from '@/app/context/AuthContext'; // Import your Auth context
+import { useAuth } from '@/app/context/AuthContext';
 
 interface SearchResult {
   id: string;
@@ -21,14 +21,13 @@ interface SearchResult {
 export default function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth(); // Get logged in user
+  const { user } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
 
-  // Fetch username for the profile link
   useEffect(() => {
     if (user) {
       const getProfile = async () => {
@@ -45,26 +44,20 @@ export default function MobileNav() {
 
   useEffect(() => {
     if (!isSearchOpen) return;
-
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.length < 2) {
         setResults([]);
         return;
       }
-
       setIsLoading(true);
       const { data, error } = await supabase
         .from('releases')
         .select('id, title, artist, slug, type, cover_url, is_single')
         .or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%`)
         .limit(5);
-
-      if (!error && data) {
-        setResults(data as SearchResult[]);
-      }
+      if (!error && data) setResults(data as SearchResult[]);
       setIsLoading(false);
     }, 300);
-
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, isSearchOpen]);
 
@@ -77,12 +70,22 @@ export default function MobileNav() {
     }
   };
 
+  const navItems = [
+    { label: 'Home', href: '/', icon: <HiHome size={22} /> },
+    { label: 'Latest', href: '/latest', icon: <HiMusicNote size={22} /> },
+    { label: 'Archive', href: '/all', icon: <HiFolder size={22} /> },
+    { 
+      label: user ? 'Vault' : 'Profile', 
+      href: user && username ? `/profile/${username}` : '/login', 
+      icon: <HiUserCircle size={22} /> 
+    },
+  ];
+
   return (
     <>
-      {/* Search Overlay Logic remains the same ... */}
+      {/* Search Overlay Logic remains exactly the same ... */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300 overflow-y-auto">
-           {/* ... existing search UI code ... */}
            <div className="p-6 flex flex-col gap-6 min-h-full">
             <div className="flex justify-between items-center">
               <h2 className="text-white font-bold text-2xl tracking-tighter uppercase italic">Search</h2>
@@ -95,7 +98,7 @@ export default function MobileNav() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search archive..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-white focus:border-red-500 transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-white focus:border-red-500 transition-all font-bold"
               />
             </form>
             <div className="flex flex-col gap-3">
@@ -120,22 +123,13 @@ export default function MobileNav() {
         </div>
       )}
 
-      {/* --- UPDATED MOBILE NAV BAR --- */}
+      {/* --- 5-ICON COMPACT MOBILE NAV BAR --- */}
       <nav className="fixed bottom-0 left-0 w-full bg-neutral-950/90 backdrop-blur-2xl border-t border-white/5 md:hidden z-[90] pb-safe">
-        <ul className="flex justify-around items-center h-20">
-          {[
-            { label: 'Home', href: '/', icon: <HiHome size={24} /> },
-            { label: 'Latest', href: '/latest', icon: <HiMusicNote size={24} /> },
-            // Profile Link: Dynamically routes to /profile/[username] or /login
-            { 
-                label: 'Archive', 
-                href: user && username ? `/profile/${username}` : '/login', 
-                icon: <HiUserCircle size={24} /> 
-            },
-          ].map((item) => {
+        <ul className="flex justify-between items-center h-16 px-2">
+          {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <li key={item.href}>
+              <li key={item.href} className="flex-1">
                 <Link 
                   href={item.href} 
                   className={`flex flex-col items-center gap-1 transition-all duration-300 active:scale-75 ${
@@ -145,8 +139,8 @@ export default function MobileNav() {
                   <div className={`${isActive ? 'drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' : ''}`}>
                     {item.icon}
                   </div>
-                  <span className="text-[9px] font-black uppercase tracking-widest leading-none">
-                    {item.label === 'Archive' && user ? 'Vault' : item.label}
+                  <span className="text-[8px] font-black uppercase tracking-tighter leading-none">
+                    {item.label}
                   </span>
                 </Link>
               </li>
@@ -154,13 +148,13 @@ export default function MobileNav() {
           })}
           
           {/* Persistent Search Button */}
-          <li>
+          <li className="flex-1 border-l border-white/5">
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="flex flex-col items-center gap-1 text-neutral-500 active:scale-75 transition-all"
+              className="w-full flex flex-col items-center gap-1 text-neutral-500 active:scale-75 transition-all"
             >
-              <HiSearch size={24} />
-              <span className="text-[9px] font-black uppercase tracking-widest leading-none">Search</span>
+              <HiSearch size={22} />
+              <span className="text-[8px] font-black uppercase tracking-tighter leading-none">Search</span>
             </button>
           </li>
         </ul>
