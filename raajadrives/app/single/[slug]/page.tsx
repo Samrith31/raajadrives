@@ -1,4 +1,5 @@
 import { supabase } from '@/app/lib/supabase';
+import { Release, ReleaseType } from '@/app/data/release';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -12,7 +13,6 @@ interface SinglePageProps {
   params: Promise<{ slug: string }>;
 }
 
-// Strictly Typed Interface to prevent ESLint "any" errors
 interface DatabaseRow {
   id: string;
   title: string;
@@ -86,13 +86,9 @@ export default async function SinglePage({ params }: SinglePageProps) {
           </div>
         </div>
 
-        {/* Fidelity Rating Module */}
+        {/* Fidelity Rating Module - UPDATED PROPS */}
         <div className="mb-10 p-6 bg-black/40 border border-white/5 rounded-3xl backdrop-blur-md shadow-2xl">
-           <StarRating 
-             albumId={single.id} 
-             initialSum={Number(single.rating_sum) || 0} 
-             initialCount={Number(single.rating_count) || 0} 
-           />
+           <StarRating albumId={single.id} />
         </div>
 
         {/* Technical Specs Grid */}
@@ -121,8 +117,6 @@ export default async function SinglePage({ params }: SinglePageProps) {
             <span className="relative z-10">Download Lossless</span>
             <div className="absolute inset-0 bg-red-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
           </Link>
-          
-        
         </div>
       </div>
 

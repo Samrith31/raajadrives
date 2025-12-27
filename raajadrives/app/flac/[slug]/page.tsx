@@ -1,3 +1,5 @@
+// 1. REMOVE 'use client'; (This makes it a Server Component)
+
 import { supabase } from '@/app/lib/supabase';
 import { Release, ReleaseType } from '@/app/data/release';
 import Image from 'next/image';
@@ -13,7 +15,6 @@ interface AlbumPageProps {
   params: Promise<{ slug: string }>;
 }
 
-// 1. Defining the exact shape of the data from Supabase
 interface DatabaseRow {
   id: string;
   created_at: string;
@@ -29,7 +30,7 @@ interface DatabaseRow {
   rating_count: number | null;
 }
 
-// 2. Specify DatabaseRow | null instead of any | null
+// Data fetching stays the same
 async function getAlbum(slug: string): Promise<DatabaseRow | null> {
   const { data, error } = await supabase
     .from('releases')
@@ -38,10 +39,10 @@ async function getAlbum(slug: string): Promise<DatabaseRow | null> {
     .single();
 
   if (error || !data) return null;
-
   return data as DatabaseRow;
 }
 
+// Server Components CAN be async
 export default async function AlbumPage({ params }: AlbumPageProps) {
   const { slug } = await params;
   const album = await getAlbum(slug);
@@ -86,11 +87,8 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
 
           {/* Star Rating Section */}
           <div className="py-2 flex justify-center md:justify-start border-y border-white/5 md:border-none">
-             <StarRating 
-               albumId={album.id} 
-               initialSum={Number(album.rating_sum) || 0} 
-               initialCount={Number(album.rating_count) || 0} 
-             />
+             {/* This Client Component works perfectly inside this Server Component */}
+             <StarRating albumId={album.id} />
           </div>
 
           <div className="flex flex-col gap-1 text-sm text-neutral-400 font-mono border-l-2 border-neutral-700 pl-4 mx-auto md:mx-0 max-w-max bg-black/30 p-2 rounded-r-lg backdrop-blur-sm">
