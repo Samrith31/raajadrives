@@ -46,7 +46,16 @@ const heroSlides = [
     badge: "Universal Harmony",
     quote: "There is no difference between the howl of a dog and the songs of vidwans.",
     subQuote: "Finding melody in the most unexpected places."
-  }
+  },
+{
+  id: 7,
+  image: '/images/raaja-8.jpeg',
+  badge: "Purpose of Music",
+  quote: "True music has no agenda; it flows naturally, like a river.",
+  subQuote: "When a composer sings without intent or trade — like a farmer humming in the fields — that is real music."
+}
+
+  
 ];
 
 export default function HeroSlideshow() {
@@ -123,11 +132,7 @@ export default function HeroSlideshow() {
             </p>
 
             {/* Hint for the user */}
-            <div className="animate-fade-up opacity-0 pt-4" style={{ animationDelay: '800ms' }}>
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500 bg-red-500/10 px-4 py-2 rounded-full border border-red-500/20">
-                Click to Spin for a Random Gem
-              </span>
-            </div>
+          
           </div>
         </div>
 
