@@ -47,13 +47,13 @@ const heroSlides = [
     quote: "There is no difference between the howl of a dog and the songs of vidwans.",
     subQuote: "Finding melody in the most unexpected places."
   },
-{
-  id: 7,
-  image: '/images/raaja-8.jpeg',
-  badge: "Purpose of Music",
-  quote: "True music has no agenda; it flows naturally, like a river.",
-  subQuote: "When a composer sings without intent or trade — like a farmer humming in the fields — that is real music."
-}
+// {
+//   id: 7,
+//   image: '/images/raaja-7.jpeg',
+//   badge: "Purpose of Music",
+//   quote: "True music has no agenda; it flows naturally, like a river.",
+//   subQuote: "When a composer sings without intent or trade, like a farmer humming in the fields, that is real music."
+// }
 
   
 ];
