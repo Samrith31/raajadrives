@@ -124,11 +124,13 @@ export default function AlbumCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90" />
       </div>
 
-      <div className="p-3 md:p-6">
-        <h3 className="font-bold text-sm md:text-lg tracking-tight truncate text-white italic leading-tight">
+      <div className="p-3 md:p-5">
+        {/* Title: Slightly smaller on mobile to prevent massive wrapping */}
+        <h3 className="font-display font-bold text-sm md:text-[15px] tracking-tight truncate text-neutral-100 group-hover:text-white transition-colors">
           {album.title}
         </h3>
-        <p className="text-[9px] md:text-[10px] text-neutral-500 uppercase tracking-[0.3em] mt-1 font-black truncate">
+
+        <p className="text-[9px] md:text-[10px] text-neutral-500 uppercase tracking-[0.3em] mt-1 font-black truncate italic">
           {album.artist}
         </p>
 
