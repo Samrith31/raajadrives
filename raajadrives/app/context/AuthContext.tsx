@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -24,57 +24,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', userId)
-        .single();
-      if (data) setUsername(data.username);
-    } catch (err) {
-      console.error("Profile fetch failed:", err);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', userId)
+      .single();
+
+    if (!error && data) {
+      setUsername(data.username);
     }
   };
 
   useEffect(() => {
-    const initialize = async () => {
-      try {
-        // 1. Get current session from storage immediately
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          // If token is corrupted, clear it so user isn't 'stuck'
-          if (error.message.includes('Refresh Token Not Found')) {
-            await supabase.auth.signOut();
-          }
-          throw error;
-        }
-
-        if (session?.user) {
-          setUser(session.user);
-          await fetchProfile(session.user.id);
-        }
-      } catch (err) {
-        console.error("Auth init error:", err);
-      } finally {
-        // ALWAYS set loading to false to unfreeze the UI
-        setLoading(false);
-      }
-    };
-
-    initialize();
-
-    // 2. Listen for Auth changes (Login, Logout, Token Refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        await fetchProfile(session.user.id);
-      } else {
-        setUser(null);
-        setUsername(null);
+    // 1️⃣ Initial session hydration
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) {
+        setUser(data.session.user);
+        fetchProfile(data.session.user.id);
       }
       setLoading(false);
     });
+
+    // 2️⃣ Auth state listener (single source of truth)
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          fetchProfile(session.user.id);
+        } else {
+          setUser(null);
+          setUsername(null);
+        }
+      });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -83,8 +64,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setUsername(null);
-    // Hard refresh to clear all app states
-    window.location.href = '/login';
   };
 
   return (
