@@ -33,16 +33,21 @@ export default function LoginPage() {
       }
 
       // 2. Authenticate using the retrieved email
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: profile.email,
         password,
       });
 
       if (authError) throw authError;
 
-      // Success redirect
-      router.push('/');
-      router.refresh();
+      // --- SUCCESS BLOCK: HARD REDIRECT ---
+      if (!authError && data.user) {
+        setLoading(false);
+        // Using window.location.href instead of router.push
+        // This is the most reliable way to stay logged in on a refresh.
+        window.location.href = '/'; 
+      }
+      
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -120,9 +125,11 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center mt-8 text-neutral-600 text-[10px] font-bold uppercase tracking-widest">
-          New to the Drive? <Link href="/signup" className="text-white hover:text-red-500 transition-colors">Apply Here</Link>
-        </p>
+        <div className="mt-10 pt-6 border-t border-white/5 text-center">
+            <p className="text-neutral-600 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+              New to the Drive? <Link href="/signup" className="text-white hover:text-red-500 transition-colors">Apply Here</Link>
+            </p>
+        </div>
       </motion.div>
     </div>
   );

@@ -35,12 +35,14 @@ export default function SignUpPage() {
 
       if (authError) throw authError;
 
+      // --- SUCCESS BLOCK: HARD REDIRECT ---
       if (data.user) {
-        // Use a hard redirect for production reliability
-        window.location.href = '/';
+        setLoading(false);
+        // Using window.location.href instead of router.push
+        // This is the most reliable way to stay logged in on a refresh.
+        window.location.href = '/'; 
       }
     } catch (err) {
-      // Type-safe error handling replaces 'any'
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -73,6 +75,7 @@ export default function SignUpPage() {
         </div>
 
         <form onSubmit={handleSignUp} className="space-y-4">
+          {/* Username */}
           <div className="relative group">
             <HiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-red-500 transition-colors" size={20} />
             <input
@@ -85,6 +88,7 @@ export default function SignUpPage() {
             />
           </div>
 
+          {/* Email */}
           <div className="relative group">
             <HiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-red-500 transition-colors" size={20} />
             <input
@@ -97,6 +101,7 @@ export default function SignUpPage() {
             />
           </div>
 
+          {/* Password */}
           <div className="relative group">
             <HiLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-red-500 transition-colors" size={20} />
             <input

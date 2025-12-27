@@ -59,7 +59,7 @@ const imageSrc = cover
           .select('id')
           .eq('user_id', user.id)
           .eq('release_id', album.id)
-          .single();
+          .maybeSingle();
         if (data) setIsLiked(true);
       };
       checkLikeStatus();
