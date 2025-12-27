@@ -1,12 +1,18 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import { useEffect, useState, use } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import Image from 'next/image';
 import AlbumCard from '@/app/components/AlbumCard';
-import { HiHeart, HiCollection, HiCalendar, HiBadgeCheck, HiLogout } from 'react-icons/hi'; // Added HiLogout
+import {
+  HiHeart,
+  HiCollection,
+  HiCalendar,
+  HiBadgeCheck,
+  HiLogout,
+} from 'react-icons/hi';
 import { Release } from '@/app/data/release';
-import { useAuth } from '@/app/context/AuthContext'; // Import useAuth
+import { useAuth } from '@/app/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 interface UserProfile {
@@ -15,54 +21,84 @@ interface UserProfile {
   created_at: string;
 }
 
-interface LikeJoinResponse {
+interface LikeRow {
   release_id: string;
-  releases: Release; 
 }
 
-export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
-  const resolvedParams = use(params);
-  const { username } = resolvedParams;
-  
-  const { user, signOut } = useAuth(); // Destructure signOut and user
+interface RatingRow {
+  release_id: string; // Reverted to release_id
+  score: number;      // Reverted to score
+}
+
+export default function ProfilePage({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}) {
+  const { username } = use(params);
+  const { user, signOut } = useAuth();
   const router = useRouter();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [likedReleases, setLikedReleases] = useState<Release[]>([]);
+  const [userRatings, setUserRatings] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
-  // Logout Handler
   const handleLogout = async () => {
     await signOut();
     router.push('/login');
   };
 
   useEffect(() => {
-    async function fetchProfile() {
+    const fetchProfile = async () => {
+      // 1. Fetch Profile Info
       const { data: profileData } = await supabase
         .from('profiles')
         .select('id, username, created_at')
         .eq('username', username)
         .single();
 
-      if (profileData) {
-        setProfile(profileData as UserProfile);
-
-        const { data: likesData } = await supabase
-          .from('likes')
-          .select(`release_id, releases (*)`)
-          .eq('user_id', profileData.id);
-
-        if (likesData) {
-          const formatted = (likesData as unknown as LikeJoinResponse[])
-            .map(item => item.releases)
-            .filter((r): r is Release => r !== null);
-          
-          setLikedReleases(formatted);
-        }
+      if (!profileData) {
+        setLoading(false);
+        return;
       }
+
+      setProfile(profileData);
+
+      // 2. Fetch Likes and Ratings in parallel
+      const [likesResponse, ratingsResponse] = await Promise.all([
+        supabase
+          .from('likes')
+          .select('release_id')
+          .eq('user_id', profileData.id),
+        supabase
+          .from('ratings')
+          .select('release_id, score')
+          .eq('user_id', profileData.id)
+      ]);
+
+      // 3. Process Likes
+      const releaseIds = (likesResponse.data as LikeRow[] | null)?.map(l => l.release_id) ?? [];
+
+      if (releaseIds.length > 0) {
+        const { data: releases } = await supabase
+          .from('releases')
+          .select('*')
+          .in('id', releaseIds);
+
+        setLikedReleases((releases ?? []) as Release[]);
+      }
+
+      // 4. Process Ratings
+      const ratingMap: Record<string, number> = {};
+      (ratingsResponse.data as RatingRow[] | null)?.forEach(r => {
+        ratingMap[r.release_id] = r.score;
+      });
+
+      setUserRatings(ratingMap);
       setLoading(false);
-    }
+    };
+
     fetchProfile();
   }, [username]);
 
@@ -74,21 +110,20 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     );
   }
 
-  // Only show logout if the profile being viewed is the logged-in user's profile
   const isOwnProfile = user?.id === profile?.id;
 
   return (
     <div className="min-h-screen bg-neutral-950 pb-24 md:pb-12">
+      {/* Cinematic Background Gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] bg-gradient-to-b from-red-900/5 to-transparent" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-6 md:pt-10">
         
-        {/* --- LOGO-CENTRIC HEADER --- */}
+        {/* --- LOGO-CENTRIC PREMIUM HEADER --- */}
         <div className="relative overflow-hidden rounded-[2rem] md:rounded-[3rem] bg-neutral-900/30 border border-white/5 backdrop-blur-2xl p-6 md:p-10 mb-8 group">
           
-          {/* LOGOUT BUTTON (Top Right) */}
           {isOwnProfile && (
             <button 
               onClick={handleLogout}
@@ -100,6 +135,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           )}
 
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 relative z-10">
+            
+            {/* Red Neon Logo Container */}
             <div className="relative shrink-0">
               <div className="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-10 group-hover:opacity-25 transition-opacity" />
               <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full border border-red-600/30 p-1.5 bg-neutral-950 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
@@ -152,7 +189,11 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         {likedReleases.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6">
             {likedReleases.map((album) => (
-              <AlbumCard key={album.id} album={album} />
+              <AlbumCard 
+                key={album.id} 
+                album={album} 
+                userRating={userRatings[album.id]} 
+              />
             ))}
           </div>
         ) : (

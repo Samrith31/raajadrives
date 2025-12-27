@@ -3,69 +3,89 @@
 import { useState, useEffect } from 'react';
 import { HiStar } from 'react-icons/hi';
 import { supabase } from '@/app/lib/supabase';
+import { useAuth } from '@/app/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface StarRatingProps {
-  albumId: string;
-  initialSum: number;
-  initialCount: number;
+  albumId: string; // this is your release_id
 }
 
-export default function StarRating({ albumId, initialSum, initialCount }: StarRatingProps) {
-  const [sessionVotes, setSessionVotes] = useState(0);
-  const [sessionSum, setSessionSum] = useState(0);
+export default function StarRating({ albumId }: StarRatingProps) {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
 
+  // 1️⃣ Fetch existing rating
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const voted = localStorage.getItem(`voted_${albumId}`);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (voted) setHasVoted(true);
-    }
-  }, [albumId]);
+    if (!user) return;
 
-  const totalCount = initialCount + sessionVotes;
-  const totalSum = initialSum + sessionSum;
-  const avgRating = totalCount > 0 ? (totalSum / totalCount).toFixed(1) : "0.0";
+    const fetchUserRating = async () => {
+      const { data, error } = await supabase
+        .from('ratings')
+        .select('score')
+        .eq('user_id', user.id)
+        .eq('release_id', albumId)
+        .maybeSingle();
 
-  const isFirstRating = initialCount === 0;
-  
-  // --- HIGH-LUMEN COLOR PALETTE ---
-  // Using red-500 because it's more vibrant than red-600 on dark backgrounds
-  const brightRed = 'text-red-500'; 
-  const brightAmber = 'text-amber-400';
-  
-  // Intense, layered glows for that "LED" look
-  const redNeon = 'drop-shadow-[0_0_10px_rgba(239,68,68,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
-  const amberNeon = 'drop-shadow-[0_0_10px_rgba(251,191,36,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
+      if (!error && data) {
+        setRating(data.score);
+        setHasVoted(true);
+      }
+    };
 
+    fetchUserRating();
+  }, [user, albumId]);
+
+  // 2️⃣ Submit rating
   const handleRating = async (value: number) => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
     if (isSubmitting || hasVoted) return;
-    if (window?.navigator?.vibrate) window.navigator.vibrate(10); 
-    
+
+    if (navigator?.vibrate) navigator.vibrate(10);
+
     setIsSubmitting(true);
+
     const { error } = await supabase
-      .from('releases')
-      .update({ rating_sum: initialSum + value, rating_count: initialCount + 1 })
-      .eq('id', albumId);
+      .from('ratings')
+      .insert({
+        user_id: user.id,
+        release_id: albumId, // ✅ correct column
+        score: value         // ✅ correct column
+      });
 
     if (!error) {
-      setSessionSum(value);
-      setSessionVotes(1);
+      setRating(value);
       setHasVoted(true);
-      localStorage.setItem(`voted_${albumId}`, 'true');
+    } else {
+      console.error('Rating Error:', error.message);
     }
+
     setIsSubmitting(false);
   };
+
+  // UI constants
+  const brightRed = 'text-red-500';
+  const brightAmber = 'text-amber-400';
+  const redNeon =
+    'drop-shadow-[0_0_10px_rgba(239,68,68,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
+  const amberNeon =
+    'drop-shadow-[0_0_10px_rgba(251,191,36,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
 
   return (
     <div className="flex flex-col items-center md:items-start select-none font-sans">
       <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => {
           const isHovered = hover >= star;
-          const isRated = star <= Math.round(Number(avgRating));
-          
+          const isSelected = star <= (hover || rating);
+
           return (
             <button
               key={star}
@@ -77,49 +97,63 @@ export default function StarRating({ albumId, initialSum, initialCount }: StarRa
               onMouseEnter={() => !hasVoted && setHover(star)}
               onMouseLeave={() => setHover(0)}
             >
-              {/* Laser Scanline (Subtle back-glow) */}
               {!hasVoted && isHovered && (
-                <div className={`absolute inset-x-0 h-[2px] top-1/2 -translate-y-1/2 blur-[2px] opacity-40 animate-pulse
-                  ${isFirstRating ? 'bg-red-400' : 'bg-amber-300'}`} 
-                />
+                <div className="absolute inset-x-0 h-[2px] top-1/2 -translate-y-1/2 blur-[2px] opacity-40 animate-pulse bg-amber-300" />
               )}
 
-              {/* The Star Icon */}
-              <HiStar 
-                className={`w-6 h-6 transition-all duration-200 ease-out relative z-10
-                  ${isHovered 
-                    ? `${isFirstRating ? brightRed : brightAmber} ${isFirstRating ? redNeon : amberNeon}` 
-                    : isRated 
-                      ? `${brightRed} ${redNeon}` 
+              <HiStar
+                className={`w-7 h-7 transition-all duration-200 ease-out relative z-10
+                  ${
+                    isSelected
+                      ? `${hasVoted ? brightRed : brightAmber} ${
+                          hasVoted ? redNeon : amberNeon
+                        }`
                       : 'text-white/10 hover:text-white/30'
                   }
-                  ${hasVoted && isRated ? 'brightness-125' : ''}
+                  ${hasVoted && isSelected ? 'brightness-125' : ''}
                 `}
               />
             </button>
           );
         })}
-        
-        {/* Compact Digital Score */}
+
         <div className="ml-4 flex items-baseline gap-1">
-          <span className={`text-xl font-black font-mono tracking-tighter transition-all duration-500
-            ${hasVoted ? `${brightRed} drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]` : 'text-white'}
-          `}>
-            {avgRating}
+          <span
+            className={`text-2xl font-black font-mono tracking-tighter transition-all duration-500
+              ${
+                hasVoted
+                  ? `${brightRed} drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]`
+                  : 'text-white/20'
+              }`}
+          >
+            {rating > 0 ? rating.toFixed(1) : '0.0'}
           </span>
-          <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">/ 5.0</span>
+          <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">
+            Score
+          </span>
         </div>
       </div>
 
-      {/* Ultra-Minimalist Status */}
       <div className="mt-2 flex items-center gap-2 px-1">
-        <div className={`w-[3px] h-[3px] rounded-full transition-all duration-500 
-          ${hasVoted ? 'bg-red-500 shadow-[0_0_6px_#ef4444]' : 'bg-white/10 animate-pulse'}`} 
+        <div
+          className={`w-[3px] h-[3px] rounded-full transition-all duration-500 
+            ${
+              hasVoted
+                ? 'bg-red-500 shadow-[0_0_6px_#ef4444]'
+                : 'bg-white/10 animate-pulse'
+            }`}
         />
-        <p className={`text-[9px] uppercase tracking-[0.4em] font-black transition-colors duration-500
-          ${hasVoted ? 'text-neutral-500' : hover > 0 ? (isFirstRating ? 'text-red-500' : 'text-amber-400') : 'text-neutral-200'}
-        `}>
-          {hasVoted ? "This Raaja Fan has Logged" : hover > 0 ? "Logging..." : "Rate this Beauty"}
+        <p
+          className={`text-[9px] uppercase tracking-[0.4em] font-black transition-colors duration-500
+            ${
+              hasVoted
+                ? 'text-neutral-500'
+                : hover > 0
+                ? 'text-amber-400'
+                : 'text-neutral-400'
+            }`}
+        >
+          {hasVoted ? 'Rating Logged to Vault' : hover > 0 ? 'Setting Value...' : 'Rate this Release'}
         </p>
       </div>
     </div>
