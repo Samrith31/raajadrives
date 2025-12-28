@@ -60,7 +60,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (searchQuery.length < 2) { setSearchResults([]); return; }
-      const { data } = await supabase.from('releases').select('*').ilike('title', `%${searchQuery}%`).eq('type', searchType).limit(5);
+      const { data } = await supabase.from('releases').select('*').ilike('title', `%${searchQuery}%`).eq('is_single', searchType === 'single').limit(5);
       setSearchResults((data as Release[]) || []);
     }, 300);
     return () => clearTimeout(timer);
