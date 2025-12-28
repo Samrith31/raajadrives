@@ -13,15 +13,19 @@ interface SearchResult {
   slug: string;
   type: string;
   cover_url: string | null;
-  is_single: boolean; // Added to fetch the flag
+  is_single: boolean;
 }
 
-export default function SearchBar() {
+interface SearchBarProps {
+  onSubmit?: () => void; // callback to close overlay on mobile
+}
+
+export default function SearchBar({ onSubmit }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  
+
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -33,8 +37,7 @@ export default function SearchBar() {
       }
 
       setIsLoading(true);
-      
-      // 1. Updated Select to include is_single
+
       const { data, error } = await supabase
         .from('releases')
         .select('id, title, artist, slug, type, cover_url, is_single')
@@ -47,7 +50,7 @@ export default function SearchBar() {
       } else {
         setResults((data as SearchResult[]) || []);
       }
-      
+
       setIsLoading(false);
       setShowDropdown(true);
     }, 300);
@@ -70,12 +73,12 @@ export default function SearchBar() {
     if (query.trim()) {
       setShowDropdown(false);
       router.push(`/search?q=${encodeURIComponent(query)}`);
+      if (onSubmit) onSubmit(); // close mobile overlay
     }
   };
 
   return (
     <div ref={searchRef} className="relative group z-50">
-      
       <form onSubmit={handleSubmit} className="relative">
         <input
           type="text"
@@ -99,7 +102,6 @@ export default function SearchBar() {
 
       {showDropdown && results.length > 0 && (
         <div className="absolute top-full right-0 mt-3 w-80 bg-neutral-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-          
           {isLoading ? (
             <div className="p-4 text-center text-xs text-neutral-500 font-mono uppercase tracking-widest">
               Searching Archive...
@@ -107,42 +109,27 @@ export default function SearchBar() {
           ) : (
             <ul>
               {results.map((album) => {
-                // --- 2. UPDATED DYNAMIC ROUTING LOGIC ---
                 let linkPrefix = '/flac';
-                if (album.is_single) {
-                  linkPrefix = '/single';
-                } else if (album.type === 'lprip') {
-                  linkPrefix = '/lprips';
-                } else if (album.type === 'cdrip') {
-                  linkPrefix = '/cdrips';
-                }
+                if (album.is_single) linkPrefix = '/single';
+                else if (album.type === 'lprip') linkPrefix = '/lprips';
+                else if (album.type === 'cdrip') linkPrefix = '/cdrips';
 
                 return (
                   <li key={album.id}>
-                    <Link 
+                    <Link
                       href={`${linkPrefix}/${album.slug}`}
                       onClick={() => setShowDropdown(false)}
                       className="flex items-center gap-3 p-3 hover:bg-white/10 transition-colors border-b border-white/5 last:border-0 group/item"
                     >
                       <div className="relative w-10 h-10 rounded-md overflow-hidden shrink-0 bg-neutral-800 border border-white/5">
-                        <Image 
-                          src={album.cover_url || '/images/placeholder.jpg'} 
-                          alt="" 
-                          fill 
-                          className="object-cover"
-                        />
+                        <Image src={album.cover_url || '/images/placeholder.jpg'} alt="" fill className="object-cover"/>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                           <p className="text-sm font-bold text-white truncate group-hover/item:text-red-500 transition-colors">
-                            {album.title}
-                           </p>
-                           {/* 3. NEW: Subtle Single Indicator */}
-                           {album.is_single && (
-                             <span className="text-[8px] font-black bg-amber-500 text-black px-1 rounded uppercase tracking-tighter shrink-0">
-                               Single
-                             </span>
-                           )}
+                          <p className="text-sm font-bold text-white truncate group-hover/item:text-red-500 transition-colors">{album.title}</p>
+                          {album.is_single && (
+                            <span className="text-[8px] font-black bg-amber-500 text-black px-1 rounded uppercase tracking-tighter shrink-0">Single</span>
+                          )}
                         </div>
                         <p className="text-xs text-neutral-400 truncate font-medium italic">{album.artist}</p>
                       </div>
@@ -151,12 +138,12 @@ export default function SearchBar() {
                 );
               })}
               <li className="bg-neutral-950 p-2.5 text-center border-t border-white/5">
-                 <button 
-                   onClick={(e) => handleSubmit(e)}
-                   className="text-[10px] text-neutral-500 hover:text-white transition-colors font-black uppercase tracking-[0.2em]"
-                 >
-                   Expand All Results
-                 </button>
+                <button
+                  onClick={handleSubmit}
+                  className="text-[10px] text-neutral-500 hover:text-white transition-colors font-black uppercase tracking-[0.2em]"
+                >
+                  Expand All Results
+                </button>
               </li>
             </ul>
           )}
