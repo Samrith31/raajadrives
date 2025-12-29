@@ -1,20 +1,17 @@
-// 1. REMOVE 'use client'; (This makes it a Server Component)
-
 import { supabase } from '@/app/lib/supabase';
-import { Release, ReleaseType } from '@/app/data/release';
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import CommentSection from '@/app/components/CommentSection';
 import BackgroundSlideshow from '@/app/components/BackgroundSlideshow';
 import StarRating from '@/app/components/StarRating';
+import DownloadButton from '@/app/components/DownloadButton';
+import LikeButton from '@/app/components/LikeButton'; // New Import
+import { IconType } from 'react-icons';
+import { HiOutlineDatabase, HiOutlineMusicNote, HiCalendar } from 'react-icons/hi';
 
 export const revalidate = 0;
 
-interface AlbumPageProps {
-  params: Promise<{ slug: string }>;
-}
-
+// --- STRICT TYPES ---
 interface DatabaseRow {
   id: string;
   created_at: string;
@@ -30,7 +27,16 @@ interface DatabaseRow {
   rating_count: number | null;
 }
 
-// Data fetching stays the same
+interface AlbumPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+interface SpecCardProps {
+  icon: IconType;
+  label: string;
+  value: string | number;
+}
+
 async function getAlbum(slug: string): Promise<DatabaseRow | null> {
   const { data, error } = await supabase
     .from('releases')
@@ -42,7 +48,23 @@ async function getAlbum(slug: string): Promise<DatabaseRow | null> {
   return data as DatabaseRow;
 }
 
-// Server Components CAN be async
+// --- HELPER COMPONENT ---
+function SpecCard({ icon: Icon, label, value }: SpecCardProps) {
+  return (
+    <div className="bg-white/[0.03] border border-white/5 p-5 rounded-2xl text-left hover:border-red-500/30 transition-colors group">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="text-neutral-500 group-hover:text-red-500 transition-colors" size={14} />
+        <span className="block text-[10px] text-neutral-500 uppercase tracking-widest group-hover:text-red-500 transition-colors">
+          {label}
+        </span>
+      </div>
+      <span className="text-sm text-white font-bold uppercase tracking-tight">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export default async function AlbumPage({ params }: AlbumPageProps) {
   const { slug } = await params;
   const album = await getAlbum(slug);
@@ -52,71 +74,102 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-20 px-6 relative isolate">
+    <div className="min-h-screen flex flex-col items-center pt-32 pb-20 px-6 relative isolate">
+      {/* Dynamic Background */}
       <BackgroundSlideshow />
 
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-10 items-center mb-16 z-10">
+      <div className="max-w-2xl w-full z-10 flex flex-col items-center text-center">
         
-        {/* Left Col: Cover Art */}
-        <div className="relative aspect-square w-full max-w-[400px] mx-auto rounded-xl shadow-2xl shadow-black/70 overflow-hidden border border-white/10 group">
-          <Image
-            src={album.cover_url || '/images/placeholder.jpg'}
-            alt={album.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 400px"
-            priority 
-          />
+        {/* 1. Artwork with Glow */}
+        <div className="relative aspect-square w-full max-w-[340px] mb-8 group">
+          <div className="absolute inset-0 bg-red-600/20 blur-3xl rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000 opacity-50" />
+          <div className="relative h-full w-full rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.9)] overflow-hidden border border-white/10">
+            <Image
+              src={album.cover_url || '/images/placeholder.jpg'}
+              alt={album.title}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-[2s]"
+              sizes="340px"
+              priority 
+            />
+            <div className="absolute top-4 left-4 px-3 py-1 bg-red-600 text-white text-[10px] font-black uppercase rounded-sm tracking-[0.2em] shadow-xl">
+              {album.quality || 'Lossless'}
+            </div>
+          </div>
         </div>
 
-        {/* Right Col: Details */}
-        <div className="space-y-6 text-center md:text-left">
-          <div>
-            {album.quality && (
-              <span className="inline-block mb-3 px-3 py-1 text-xs font-bold tracking-widest text-red-400 bg-red-900/20 border border-red-500/20 rounded-full uppercase">
-                {album.quality}
-              </span>
-            )}
-            <h1 className="font-display text-4xl md:text-5xl font-bold leading-tight mb-2 text-white drop-shadow-lg">
-              {album.title}
-            </h1>
-            <p className="font-ui text-xl text-neutral-300 drop-shadow-md">
+        {/* 2. Action Row (Likes) */}
+        <div className="mb-8">
+          <LikeButton releaseId={album.id} />
+        </div>
+
+        {/* 3. Title & Artist */}
+        <div className="mb-10">
+          <h1 className="font-display text-5xl md:text-6xl font-black text-white mb-3 tracking-tighter drop-shadow-2xl uppercase">
+            {album.title}
+          </h1>
+          <div className="flex items-center justify-center gap-3">
+            <span className="h-px w-8 bg-red-600 shadow-[0_0_10px_#dc2626]" />
+            <p className="text-xl text-neutral-400 font-medium tracking-widest uppercase italic">
               {album.artist}
             </p>
+            <span className="h-px w-8 bg-red-600 shadow-[0_0_10px_#dc2626]" />
           </div>
+        </div>
 
-          {/* Star Rating Section */}
-          <div className="py-2 flex justify-center md:justify-start border-y border-white/5 md:border-none">
-             {/* This Client Component works perfectly inside this Server Component */}
-             <StarRating albumId={album.id} />
-          </div>
+        {/* 4. Rating Module */}
+        <div className="mb-10 w-full p-6 bg-black/40 border border-white/5 rounded-3xl backdrop-blur-md shadow-2xl flex flex-col items-center justify-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500 mb-4 text-center">
+            How much you like ..?
+          </p>
+          <StarRating albumId={album.id} />
+        </div>
 
-          <div className="flex flex-col gap-1 text-sm text-neutral-400 font-mono border-l-2 border-neutral-700 pl-4 mx-auto md:mx-0 max-w-max bg-black/30 p-2 rounded-r-lg backdrop-blur-sm">
-            <span>Year: {album.year || 'N/A'}</span>
-            <span>
-              Format: {
-                album.type === 'lprip' ? 'Vinyl Rip' : 
-                album.type === 'cdrip' ? 'CD Rip' : 'Digital DL Flac'
-              }
-            </span>
+        {/* 5. Technical Specs Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full mb-12 font-mono">
+          <SpecCard 
+            icon={HiCalendar} 
+            label="Year" 
+            value={album.year || 'N/A'} 
+          />
+          <SpecCard 
+            icon={HiOutlineDatabase} 
+            label="Source" 
+            value={
+              album.type === 'lprip' ? 'Vinyl' : 
+              album.type === 'cdrip' ? 'CD' : 'Digital'
+            } 
+          />
+          <div className="hidden sm:block">
+            <SpecCard 
+              icon={HiOutlineMusicNote} 
+              label="Format" 
+              value={
+                album.type === 'lprip' || album.type === 'cdrip' 
+                  ? 'WAV' 
+                  : 'FLAC'
+              } 
+            />
           </div>
+        </div>
 
-          <div className="pt-4">
-            <Link
-              href={album.download_url}
-              target="_blank"
-              className="inline-flex items-center justify-center w-full md:w-auto px-8 py-4 font-bold text-white bg-red-600 rounded-full hover:bg-red-500 hover:scale-105 transition-all shadow-lg shadow-red-900/30 active:scale-95"
-            >
-              Download Album
-            </Link>
-            <p className="mt-3 text-xs text-neutral-400">
-              Direct download • No compression
-            </p>
-          </div>
+        {/* 6. Action Button */}
+        <div className="w-full flex flex-col items-center gap-6">
+          <DownloadButton downloadUrl={album.download_url} />
+          <p className="text-[9px] text-neutral-500 uppercase tracking-[0.3em] font-bold">
+            Archivist Vault Access
+          </p>
         </div>
       </div>
 
-      <div className="w-full max-w-2xl z-10">
+      {/* 7. Community Section */}
+      <div className="w-full max-w-2xl mt-24 z-10">
+        <div className="flex items-center gap-4 mb-10">
+            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-white whitespace-nowrap italic">
+              Listener <span className="text-neutral-600">Feedback</span>
+            </h2>
+            <div className="h-px w-full bg-gradient-to-r from-white/20 to-transparent" />
+        </div>
         <CommentSection slug={album.slug} />
       </div>
     </div>

@@ -57,8 +57,8 @@ export default function StarRating({ albumId }: StarRatingProps) {
       .from('ratings')
       .insert({
         user_id: user.id,
-        release_id: albumId, // ✅ correct column
-        score: value         // ✅ correct column
+        release_id: albumId,
+        score: value         
       });
 
     if (!error) {
@@ -71,16 +71,14 @@ export default function StarRating({ albumId }: StarRatingProps) {
     setIsSubmitting(false);
   };
 
-  // UI constants
   const brightRed = 'text-red-500';
   const brightAmber = 'text-amber-400';
-  const redNeon =
-    'drop-shadow-[0_0_10px_rgba(239,68,68,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
-  const amberNeon =
-    'drop-shadow-[0_0_10px_rgba(251,191,36,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
+  const redNeon = 'drop-shadow-[0_0_10px_rgba(239,68,68,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
+  const amberNeon = 'drop-shadow-[0_0_10px_rgba(251,191,36,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
 
   return (
-    <div className="flex flex-col items-center md:items-start select-none font-sans">
+    /* UPDATED: Removed md:items-start to keep it centered on all screens */
+    <div className="flex flex-col items-center justify-center select-none font-sans w-full">
       <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => {
           const isHovered = hover >= star;
@@ -117,24 +115,31 @@ export default function StarRating({ albumId }: StarRatingProps) {
           );
         })}
 
-        <div className="ml-4 flex items-baseline gap-1">
-          <span
-            className={`text-2xl font-black font-mono tracking-tighter transition-all duration-500
-              ${
-                hasVoted
-                  ? `${brightRed} drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]`
-                  : 'text-white/20'
-              }`}
-          >
-            {rating > 0 ? rating.toFixed(1) : '0.0'}
-          </span>
-          <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">
-            Score
-          </span>
-        </div>
+<div className="ml-5 flex items-baseline">
+  {/* Numerical Score */}
+  <span
+    className={`text-3xl font-black font-mono tracking-tighter transition-all duration-500
+      ${
+        hasVoted
+          ? `${brightRed} drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]`
+          : 'text-white/20'
+      }`}
+  >
+    {rating > 0 ? Math.floor(rating) : '0'}
+  </span>
+
+  {/* Denominator - Bold and Scaled */}
+  <span 
+    className={`text-2xl font-black tracking-tighter italic transition-colors duration-500 ml-0.5
+      ${hasVoted ? 'text-red-900/40' : 'text-neutral-800'}`}
+  >
+    /5
+  </span>
+</div>
       </div>
 
-      <div className="mt-2 flex items-center gap-2 px-1">
+      {/* UPDATED: Added justify-center to ensure text and dot stay in the middle */}
+      <div className="mt-2 flex items-center justify-center gap-2 px-1">
         <div
           className={`w-[3px] h-[3px] rounded-full transition-all duration-500 
             ${
