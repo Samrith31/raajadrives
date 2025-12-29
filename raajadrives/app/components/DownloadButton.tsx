@@ -50,7 +50,7 @@ export default function DownloadButton({ downloadUrl, isLiked, isRated }: Downlo
               <div className={`p-3 rounded-full border ${isLiked ? 'border-red-500/20 bg-red-500/10' : 'border-white/5'}`}>
                 {isLiked ? <HiCheckCircle size={20} /> : <HiHeart size={20} />}
               </div>
-              <span className="text-[9px] font-black uppercase tracking-widest">Archive Logged</span>
+              <span className="text-[9px] font-black uppercase tracking-widest">Like Unlocked</span>
             </div>
 
             <div className="h-10 w-[1px] bg-white/5" />
@@ -60,7 +60,7 @@ export default function DownloadButton({ downloadUrl, isLiked, isRated }: Downlo
               <div className={`p-3 rounded-full border ${isRated ? 'border-yellow-500/20 bg-yellow-500/10' : 'border-white/5'}`}>
                 {isRated ? <HiCheckCircle size={20} /> : <HiStar size={20} />}
               </div>
-              <span className="text-[9px] font-black uppercase tracking-widest">Data Rated</span>
+              <span className="text-[9px] font-black uppercase tracking-widest">Rate Unlocked</span>
             </div>
           </div>
           
