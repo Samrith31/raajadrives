@@ -5,16 +5,18 @@ import { supabase } from '@/app/lib/supabase';
 import { useAuth } from '@/app/context/AuthContext';
 import Image from 'next/image';
 import Link from 'next/link';
-// Import HiStar for the icons
-import { HiStar, HiUsers, HiLightningBolt, HiBadgeCheck } from 'react-icons/hi';
+import { HiStar, HiUsers, HiLightningBolt, HiBadgeCheck, HiUserCircle } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 
-// --- INTERFACES (Unchanged) ---
+// --- UPDATED INTERFACES ---
 interface ActivityResponse {
   id: string;
   created_at: string;
   score: number;
-  profiles: { username: string } | null;
+  profiles: { 
+    username: string;
+    avatar_url: string | null; // Added avatar_url
+  } | null;
   releases: { 
     title: string; 
     artist: string; 
@@ -29,6 +31,7 @@ interface ActivityItem {
   created_at: string;
   score: number;
   username: string;
+  avatar_url: string | null; // Added avatar_url
   release: {
     title: string;
     artist: string;
@@ -43,7 +46,6 @@ export default function ActivityPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // --- FETCH LOGIC (Unchanged) ---
   useEffect(() => {
     if (!user) return;
     const fetchActivity = async () => {
@@ -53,11 +55,17 @@ export default function ActivityPage() {
 
       const { data, error } = await supabase
         .from('ratings')
-        .select(`id, created_at, score, profiles!user_id(username), releases!release_id(title, artist, cover_url, slug, type)`)
+        .select(`
+          id, 
+          created_at, 
+          score, 
+          profiles!user_id(username, avatar_url), 
+          releases!release_id(title, artist, cover_url, slug, type)
+        `) // Fetching avatar_url from profile join
         .in('user_id', followedIds)
         .gte('score', 4)
         .order('created_at', { ascending: false })
-        .limit(20) as { data: ActivityResponse[] | null; error: Error | null };
+        .limit(20) as unknown as { data: ActivityResponse[] | null; error: Error | null };
 
       if (data && !error) {
         const formattedData: ActivityItem[] = data
@@ -67,6 +75,7 @@ export default function ActivityPage() {
             created_at: item.created_at,
             score: item.score,
             username: item.profiles!.username,
+            avatar_url: item.profiles!.avatar_url, // Map the avatar
             release: {
               title: item.releases!.title,
               artist: item.releases!.artist,
@@ -96,18 +105,14 @@ export default function ActivityPage() {
         <div className="flex items-center justify-between mb-12 border-b border-white/5 pb-6">
           <div className="flex items-center gap-3">
             <div className="h-6 w-[3px] bg-red-600 shadow-[0_0_10px_#dc2626]" />
-         <h1 className="text-2xl font-black text-white uppercase italic tracking-tighter">
- Maestro&apos;s
-  <span className="ml-3 text-neutral-500 font-medium italic">Feed</span>
-</h1>
-
-
+            <h1 className="text-2xl font-black text-white uppercase italic tracking-tighter">
+              Maestro&apos;s <span className="ml-3 text-neutral-500 font-medium italic">Feed</span>
+            </h1>
           </div>
           <HiLightningBolt className="text-red-600 animate-pulse" size={24} />
         </div>
 
         {activities.length > 0 ? (
-          /* --- POSTS LOOP --- */
           <div className="flex flex-col gap-10 md:gap-16">
             {activities.map((item, i) => (
               <motion.div
@@ -120,7 +125,19 @@ export default function ActivityPage() {
                 {/* 1. Header: Archivist Identity */}
                 <div className="flex items-center gap-3 mb-5">
                   <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-neutral-800 shrink-0 p-0.5 bg-neutral-950 group-hover:border-red-600/50 transition-colors">
-                     <Image src="/images/logo-2.jpeg" alt="" fill className="object-cover rounded-full" />
+                    {/* UPDATED: Dynamic Avatar with Fallback */}
+                    {item.avatar_url ? (
+                      <Image 
+                        src={item.avatar_url} 
+                        alt={item.username} 
+                        fill 
+                        className="object-cover rounded-full" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-neutral-800">
+                        <HiUserCircle size={28} className="text-neutral-500" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -135,7 +152,7 @@ export default function ActivityPage() {
                   </div>
                 </div>
 
-                {/* 2. The Artwork (Clean, no badge inside) */}
+                {/* 2. The Artwork */}
                 <Link 
                   href={`/${item.release.type === 'single' ? 'single' : 'flac'}/${item.release.slug}`}
                   className="relative block w-full aspect-square rounded-2xl overflow-hidden border border-white/5 bg-neutral-950 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] group-hover:shadow-[0_20px_40px_-15px_rgba(220,38,38,0.2)] transition-all duration-500"
@@ -148,14 +165,10 @@ export default function ActivityPage() {
                   />
                 </Link>
 
-                {/* --- NEW: INDIVIDUAL ICON STARS (Outside the artwork) --- */}
+                {/* 3. Rating Stars */}
                 <div className="mt-5 px-1 flex items-center gap-1.5">
-                  {/* Dynamically generate 5 stars */}
                   {Array.from({ length: 5 }).map((_, starIndex) => {
-                    // Calculate if this star should be lit based on the score.
-                    // Using Math.floor checks if the integer part of the score covers this star position.
                     const isLit = (starIndex + 1) <= Math.floor(item.score);
-                    
                     return (
                       <HiStar 
                         key={starIndex} 
@@ -166,7 +179,7 @@ export default function ActivityPage() {
                   })}
                 </div>
 
-                {/* 3. Footer: Release Info */}
+                {/* 4. Release Info */}
                 <div className="mt-3 px-1">
                   <Link href={`/${item.release.type === 'single' ? 'single' : 'flac'}/${item.release.slug}`}>
                     <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase truncate group-hover:text-red-600 transition-colors">
@@ -176,8 +189,7 @@ export default function ActivityPage() {
                       {item.release.artist}
                     </p>
                   </Link>
-                  
-                   <div className="flex items-center gap-2 mt-4">
+                  <div className="flex items-center gap-2 mt-4">
                      <div className="h-[2px] w-6 bg-red-600" />
                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-red-500 italic">{item.username} Logged</span>
                   </div>
@@ -186,7 +198,6 @@ export default function ActivityPage() {
             ))}
           </div>
         ) : (
-          /* --- EMPTY STATE --- */
           <div className="py-32 text-center rounded-[3rem] border border-dashed border-white/5 bg-neutral-900/10">
             <HiUsers className="mx-auto text-neutral-800 mb-4 opacity-50" size={48} />
             <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.2em]">Feed Unlinked</p>

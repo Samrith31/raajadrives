@@ -5,13 +5,13 @@ import { supabase } from '@/app/lib/supabase';
 import { useAuth } from '@/app/context/AuthContext';
 import Image from 'next/image';
 import Link from 'next/link';
-import { HiUsers, HiPlus, HiCheck, HiSparkles, HiMusicNote, HiSearch, HiX } from 'react-icons/hi';
+import { HiUsers, HiPlus, HiCheck, HiSparkles, HiMusicNote, HiSearch, HiX, HiUserCircle } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PostgrestError } from '@supabase/supabase-js';
 
 interface ArchivistProfile {
   id: string;
   username: string;
+  avatar_url: string | null; // Added avatar_url
   follower_count: number;
   is_following: boolean;
   common_count: number;
@@ -19,14 +19,14 @@ interface ArchivistProfile {
 
 export default function DiscoveryPage() {
   const { user } = useAuth();
-  const [archivists, setArchivists] = useState< ArchivistProfile[]>([]);
+  const [archivists, setArchivists] = useState<ArchivistProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
-  // 1. Helper to fetch social stats (to keep effects clean)
-  const enrichProfiles = useCallback(async (profiles: { id: string, username: string }[], matchCounts?: Record<string, number>) => {
+  // 1. Helper updated to handle avatar_url
+  const enrichProfiles = useCallback(async (profiles: { id: string, username: string, avatar_url: string | null }[], matchCounts?: Record<string, number>) => {
     if (!user) return [];
     
     return await Promise.all(
@@ -39,6 +39,7 @@ export default function DiscoveryPage() {
         return {
           id: profile.id,
           username: profile.username,
+          avatar_url: profile.avatar_url, // Map from the database result
           follower_count: followersRes.count || 0,
           is_following: !!followStatus.data,
           common_count: matchCounts ? matchCounts[profile.id] || 0 : 0,
@@ -47,26 +48,19 @@ export default function DiscoveryPage() {
     );
   }, [user]);
 
-  // 2. Unified Logic Effect
+  // 2. Main Logic
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) { setLoading(false); return; }
 
     let isMounted = true;
-
     const fetchData = async () => {
-      // Move setLoading inside the async block to avoid synchronous cascading renders
       setLoading(true);
-
       try {
         if (searchQuery.trim()) {
-          // --- SEARCH PATH ---
           setIsSearching(true);
           const { data: results } = await supabase
             .from('profiles')
-            .select('id, username')
+            .select('id, username, avatar_url') // Added avatar_url
             .ilike('username', `%${searchQuery}%`)
             .neq('id', user.id)
             .limit(15);
@@ -76,7 +70,6 @@ export default function DiscoveryPage() {
             setArchivists(enriched);
           }
         } else {
-          // --- VIBE MATCH PATH ---
           setIsSearching(false);
           const { data: myLikes } = await supabase.from('likes').select('release_id').eq('user_id', user.id);
           
@@ -105,7 +98,7 @@ export default function DiscoveryPage() {
 
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, username')
+            .select('id, username, avatar_url') // Added avatar_url
             .in('id', Object.keys(matchCount));
 
           if (isMounted && profiles) {
@@ -121,18 +114,10 @@ export default function DiscoveryPage() {
       }
     };
 
-    // Use a small debounce for search to prevent rapid fire renders
-    const timer = setTimeout(() => {
-      fetchData();
-    }, searchQuery ? 400 : 0);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
+    const timer = setTimeout(() => fetchData(), searchQuery ? 400 : 0);
+    return () => { isMounted = false; clearTimeout(timer); };
   }, [user, searchQuery, enrichProfiles]);
 
-  // --- FOLLOW HANDLER (Unchanged) ---
   const handleFollow = async (targetId: string, isFollowing: boolean) => {
     if (!user) return;
     setFollowLoading(targetId);
@@ -161,11 +146,8 @@ export default function DiscoveryPage() {
                 <div className="h-6 w-[3px] bg-red-600 shadow-[0_0_10px_#dc2626]" />
                 <h1 className="text-2xl font-black text-white uppercase italic tracking-tighter flex items-center gap-2">
                  {isSearching ? 'Manual' : "Match "}
-<span className="text-neutral-500">
-  {isSearching ? 'Search' : 'Vibe'}
-</span>
-
-                  {!isSearching && <HiSparkles className="text-red-500 animate-pulse" />}
+                 <span className="text-neutral-500">{isSearching ? 'Search' : 'Vibe'}</span>
+                 {!isSearching && <HiSparkles className="text-red-500 animate-pulse" />}
                 </h1>
               </div>
               <p className="text-neutral-500 text-[9px] font-bold uppercase tracking-[0.2em] ml-4">
@@ -204,9 +186,22 @@ export default function DiscoveryPage() {
                     </div>
                   )}
                   <div className="flex flex-col items-center text-center">
-                    <div className="relative w-24 h-24 rounded-full border-2 border-red-600/10 p-2 mb-6 group">
-                      <Image src="/images/logo-2.jpeg" alt="" fill className="object-cover rounded-full grayscale group-hover:grayscale-0 transition-all duration-700" />
+                    {/* UPDATED AVATAR BOX */}
+                    <div className="relative w-24 h-24 rounded-full border-2 border-red-600/10 p-1.5 mb-6 group bg-neutral-950 overflow-hidden">
+                      {a.avatar_url ? (
+                        <Image 
+                          src={a.avatar_url} 
+                          alt={a.username} 
+                          fill 
+                          className="object-cover rounded-full grayscale group-hover:grayscale-0 transition-all duration-700" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-neutral-900 rounded-full">
+                          <HiUserCircle size={60} className="text-neutral-800" />
+                        </div>
+                      )}
                     </div>
+
                     <Link href={`/profile/${a.username}`} className="text-xl font-black text-white hover:text-red-500 transition-colors uppercase tracking-tight">{a.username}</Link>
                     <p className="mt-2 text-[9px] text-neutral-600 font-bold uppercase tracking-widest"><HiUsers className="inline mr-1 text-red-600/40" />{a.follower_count} followers</p>
                     <button onClick={() => handleFollow(a.id, a.is_following)} disabled={followLoading === a.id}

@@ -2,24 +2,43 @@
 
 import { useAuth } from '@/app/context/AuthContext';
 import Link from 'next/link';
+import Image from 'next/image'; // Import Image for the avatar
 import { HiUserCircle, HiLogout } from 'react-icons/hi';
 
 export default function NavbarAuth() {
-  const { user, username, signOut, loading } = useAuth();
+  // Destructure avatarUrl from our updated useAuth hook
+  const { user, username, avatarUrl, signOut, loading } = useAuth();
 
-  // Show nothing while checking if the user is logged in to prevent flickering
+  // Show skeleton while checking auth state
   if (loading) return <div className="w-20 h-8 bg-white/5 animate-pulse rounded-full" />;
 
   if (user) {
     return (
       <div className="flex items-center gap-4">
         {/* User Card */}
-            <Link href={`/profile/${username}`} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:border-red-500/50 transition-all">
-    <HiUserCircle className="text-red-500 text-lg" />
-    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white italic">
-        {username || 'Member'}
-    </span>
-    </Link>
+        <Link 
+          href={`/profile/${username}`} 
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 hover:border-red-500/50 transition-all group"
+        >
+          {/* AVATAR CONTAINER */}
+          <div className="relative w-6 h-6 rounded-full overflow-hidden border border-white/10 group-hover:border-red-500/50 transition-colors bg-neutral-900 shrink-0">
+            {avatarUrl ? (
+              <Image 
+                src={avatarUrl} 
+                alt={username || 'Archivist'} 
+                fill 
+                className="object-cover"
+                sizes="24px"
+              />
+            ) : (
+              <HiUserCircle className="text-red-500 w-full h-full" />
+            )}
+          </div>
+
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white italic pr-1">
+            {username || 'Member'}
+          </span>
+        </Link>
         
         {/* Logout Button */}
         <button 
@@ -33,7 +52,7 @@ export default function NavbarAuth() {
     );
   }
 
-  // If No User, Show Join Button
+  // No User State
   return (
     <Link 
       href="/signup" 

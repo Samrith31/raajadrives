@@ -6,18 +6,21 @@ import Image from 'next/image';
 import AlbumCard from '@/app/components/AlbumCard';
 import {
   HiHeart, HiCollection, HiCalendar, HiBadgeCheck, HiLogout, HiAdjustments,
-  HiX, HiCheck, HiPencilAlt, HiSearch, HiStar, HiPlus
+  HiX, HiCheck, HiPencilAlt, HiSearch, HiStar, HiPlus, HiCog,
+  HiUserCircle
 } from 'react-icons/hi';
 import { Release } from '@/app/data/release';
 import { useAuth } from '@/app/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import FollowModal from '@/app/components/FollowModal';
+import AvatarUpload from '@/app/components/AvatarUpload';
 
 interface UserProfile {
   id: string;
   username: string;
   created_at: string;
+  avatar_url?: string; // Added avatar_url
   favorite_album_id?: string;
   favorite_single_id?: string;
   fav_album?: Release;
@@ -31,6 +34,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const { username } = use(params);
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const { refreshProfile } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [likedReleases, setLikedReleases] = useState<Release[]>([]);
@@ -50,8 +54,6 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Release[]>([]);
   const [searchType, setSearchType] = useState<'album' | 'single'>('album');
-
-  //follow and following
 
   const [activeModal, setActiveModal] = useState<'Followers' | 'Following' | null>(null);
 
@@ -109,11 +111,13 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const { data: profileData } = await supabase.from('profiles').select(`id, username, created_at, favorite_album_id, favorite_single_id, fav_album:favorite_album_id (*), fav_single:favorite_single_id (*)`).eq('username', username).single();
+      // Added avatar_url to selection
+      const { data: profileData } = await supabase.from('profiles').select(`id, username, created_at, avatar_url, favorite_album_id, favorite_single_id, fav_album:favorite_album_id (*), fav_single:favorite_single_id (*)`).eq('username', username).single();
       if (!profileData) { setLoading(false); return; }
 
       const formattedProfile: UserProfile = {
         id: profileData.id, username: profileData.username, created_at: profileData.created_at,
+        avatar_url: profileData.avatar_url,
         favorite_album_id: profileData.favorite_album_id, favorite_single_id: profileData.favorite_single_id,
         fav_album: Array.isArray(profileData.fav_album) ? profileData.fav_album[0] : profileData.fav_album,
         fav_single: Array.isArray(profileData.fav_single) ? profileData.fav_single[0] : profileData.fav_single,
@@ -185,9 +189,31 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 relative z-10">
             <div className="relative shrink-0">
               <div className="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-10" />
-              <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full border border-red-600/30 p-1.5 bg-neutral-950">
-                <Image src="/images/logo-2.jpeg" alt="Logo" fill className="object-cover rounded-full" />
-              </div>
+             <div className="relative shrink-0">
+  <div className="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-10" />
+  <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full border border-red-600/30 p-1.5 bg-neutral-950 overflow-hidden">
+    {/* Check if avatar_url exists and is NOT the broken logo string.
+      This logic ensures that if the database hasn't been cleared yet, 
+      the broken image still won't show.
+    */}
+    {profile?.avatar_url && !profile.avatar_url.includes('logo-2.jpeg') ? (
+      <Image 
+        src={profile.avatar_url} 
+        alt={`${profile.username}'s Identity`} 
+        fill 
+        className="object-cover rounded-full" 
+        priority // Add priority since this is a "Hero" image for the profile
+      />
+    ) : (
+      /* High-end Fallback Icon */
+      <div className="w-full h-full flex items-center justify-center bg-neutral-900 rounded-full relative">
+        {/* Subtle inner glow for the empty state */}
+        <div className="absolute inset-0 bg-red-600/5 animate-pulse rounded-full" />
+        <HiUserCircle size={64} className="text-neutral-800 relative z-10" />
+      </div>
+    )}
+  </div>
+</div>
             </div>
             <div className="text-center md:text-left flex-1 min-w-0">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600/10 border border-red-600/20 text-red-500 text-[9px] font-black uppercase tracking-widest mb-3">
@@ -195,25 +221,33 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               </div>
               <h1 className="text-3xl md:text-5xl font-black text-white italic uppercase tracking-tighter mb-2 truncate">{profile?.username}</h1>
               
-              <div className="flex flex-wrap justify-center md:justify-start gap-4 text-neutral-500 text-[9px] font-bold uppercase tracking-widest mt-2">
-                <span className="flex items-center gap-1.5"><HiCalendar className="text-red-600" /> Joined {profile ? new Date(profile.created_at).getFullYear() : '2025'}</span>
-                <span className="flex items-center gap-1.5"><HiCollection className="text-red-600" /> {likedReleases.length} Saved</span>
-               <button
-  onClick={() => setActiveModal('Followers')}
-  className="flex items-center gap-1.5 border-l border-white/10 pl-4 hover:text-white transition-colors"
->
-  <span className="text-white">{followerCount}</span>
-  <span>Followers</span>
-</button>
+              {/* --- RESPONSIVE STATS BAR --- */}
+              <div className="flex flex-wrap justify-center md:justify-start items-center gap-y-3 gap-x-4 text-neutral-500 text-[9px] font-bold uppercase tracking-widest mt-2">
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <HiCalendar className="text-red-600" /> Joined {profile ? new Date(profile.created_at).getFullYear() : '2025'}
+                </span>
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <HiCollection className="text-red-600" /> {likedReleases.length} Saved
+                </span>
+                
+                {/* Social Grouping */}
+                <div className="flex items-center gap-4 shrink-0 md:border-l border-white/10 md:pl-4">
+                  <button
+                    onClick={() => setActiveModal('Followers')}
+                    className="flex items-center gap-1.5 hover:text-white transition-colors"
+                  >
+                    <span className="text-white">{followerCount}</span>
+                    <span>Followers</span>
+                  </button>
 
-<button
-  onClick={() => setActiveModal('Following')}
-  className="flex items-center gap-1.5 hover:text-white transition-colors"
->
-  <span className="text-white">{followingCount}</span>
-  <span>Following</span>
-</button>
-
+                  <button
+                    onClick={() => setActiveModal('Following')}
+                    className="flex items-center gap-1.5 hover:text-white transition-colors"
+                  >
+                    <span className="text-white">{followingCount}</span>
+                    <span>Following</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -226,7 +260,6 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50">Favorite <span className="text-white">Raaja&apos;s</span></h3>
           </div>
           <div className="grid grid-cols-2 gap-3 md:gap-6">
-            {/* Album Slot */}
             <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4 group rounded-2xl bg-neutral-900/40 border border-white/5 p-2 md:p-3 hover:bg-neutral-900/60 transition-all backdrop-blur-sm overflow-hidden">
               <div className="relative aspect-square w-full md:w-24 shrink-0 rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-neutral-950">
                 {profile?.fav_album ? <Image src={profile.fav_album.cover_url || '/images/logo-2.jpeg'} alt="Fav Album" fill className="object-cover group-hover:scale-110 transition-transform duration-700" /> : <button onClick={() => isOwnProfile && setIsEditModalOpen(true)} className="w-full h-full flex items-center justify-center text-neutral-700 hover:text-red-500"><HiPlus size={22} /></button>}
@@ -237,7 +270,6 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                 <h4 className="text-[10px] md:text-base font-bold text-white truncate leading-tight mb-0.5">{profile?.fav_album?.title || "Assign Album"}</h4>
               </div>
             </div>
-            {/* Single Slot */}
             <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4 group rounded-2xl bg-neutral-900/40 border border-white/5 p-2 md:p-3 hover:bg-neutral-900/60 transition-all backdrop-blur-sm overflow-hidden">
               <div className="relative aspect-square w-full md:w-24 shrink-0 rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-neutral-950">
                 {profile?.fav_single ? <Image src={profile.fav_single.cover_url || '/images/logo-2.jpeg'} alt="Fav Single" fill className="object-cover group-hover:scale-110 transition-transform duration-700" /> : <button onClick={() => isOwnProfile && setIsEditModalOpen(true)} className="w-full h-full flex items-center justify-center text-neutral-700 hover:text-amber-500"><HiPlus size={22} /></button>}
@@ -265,7 +297,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         ) : <div className="py-20 text-center text-neutral-800 uppercase text-[10px] font-black tracking-widest">Drive Empty</div>}
       </div>
 
-      {/* --- RED NEON MODAL --- */}
+      {/* --- RED NEON EDIT MODAL --- */}
       <AnimatePresence>
         {isEditModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
@@ -273,6 +305,20 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 text-neutral-500 hover:text-red-500 transition-colors"><HiX size={24} /></button>
               <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3"><HiPencilAlt className="text-red-600" /> Edit <span className="text-neutral-500 font-medium text-sm mt-1">Profile</span></h2>
               <div className="space-y-6">
+                
+                <div className="flex flex-col items-center pb-6 border-b border-white/5">
+         <AvatarUpload 
+  currentUrl={profile?.avatar_url || null} 
+  onUploadSuccess={async (newUrl) => {
+    // Update local page state
+    if (profile) setProfile({ ...profile, avatar_url: newUrl || undefined });
+    
+    // UPDATE EVERYWHERE ELSE (Navbar, etc)
+    await refreshProfile(); 
+  }} 
+/>
+          </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-2">UserName</label>
                   <input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="w-full bg-black/60 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-red-600/50" placeholder="Enter new username..." />
@@ -302,33 +348,28 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3 text-xs">
-                   <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-[0.2em]">Live Pins</p>
-                   <div className="flex justify-between items-center"><span className="text-neutral-400">Album: <span className="text-white italic">{profile?.fav_album?.title || 'None'}</span></span>{profile?.fav_album && <button onClick={() => clearFavorite('album')} className="text-[9px] font-black uppercase text-red-600">Unpin</button>}</div>
-                   <div className="flex justify-between items-center"><span className="text-neutral-400">Single: <span className="text-white italic">{profile?.fav_single?.title || 'None'}</span></span>{profile?.fav_single && <button onClick={() => clearFavorite('single')} className="text-[9px] font-black uppercase text-red-600">Unpin</button>}</div>
+                    <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-[0.2em]">Live Pins</p>
+                    <div className="flex justify-between items-center"><span className="text-neutral-400">Album: <span className="text-white italic">{profile?.fav_album?.title || 'None'}</span></span>{profile?.fav_album && <button onClick={() => clearFavorite('album')} className="text-[9px] font-black uppercase text-red-600">Unpin</button>}</div>
+                    <div className="flex justify-between items-center"><span className="text-neutral-400">Single: <span className="text-white italic">{profile?.fav_single?.title || 'None'}</span></span>{profile?.fav_single && <button onClick={() => clearFavorite('single')} className="text-[9px] font-black uppercase text-red-600">Unpin</button>}</div>
                 </div>
-                <button onClick={handleUpdateProfile} disabled={isUpdating} className="w-full py-5 bg-red-600 text-white font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-red-500 hover:scale-[1.02] transition-all shadow-[0_0_30px_rgba(239,68,68,0.2)]">{isUpdating ? 'Syncing...' : <><HiCheck /> Commit Changes</>}</button>
+                <button onClick={handleUpdateProfile} disabled={isUpdating} className="w-full py-5 bg-red-600 text-white font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-red-500 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                  {isUpdating ? 'Syncing...' : <><HiCheck /> Commit Changes</>}
+                </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-{profile?.id && (
-  <FollowModal
-    isOpen={!!activeModal}
-    onClose={() => setActiveModal(null)}
-    title={activeModal || 'Followers'}
-    profileId={profile.id}
-  />
-)}
-
-
-
-      
+      {/* --- FOLLOW/FOLLOWING MODALS --- */}
+      {profile?.id && (
+        <FollowModal
+          isOpen={!!activeModal}
+          onClose={() => setActiveModal(null)}
+          title={activeModal || 'Followers'}
+          profileId={profile.id}
+        />
+      )}
     </div>
-
-    
   );
-
-  
 }
