@@ -10,9 +10,10 @@ import { useRouter } from 'next/navigation';
 interface LikeButtonProps {
   releaseId: string;
   variant?: 'pill' | 'circle';
+  onLikeToggle?: (isLiked: boolean) => void; // Added for Parent Communication
 }
 
-export default function LikeButton({ releaseId, variant = 'pill' }: LikeButtonProps) {
+export default function LikeButton({ releaseId, variant = 'pill', onLikeToggle }: LikeButtonProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [isLiked, setIsLiked] = useState(false);
@@ -21,16 +22,16 @@ export default function LikeButton({ releaseId, variant = 'pill' }: LikeButtonPr
 
   // 1. Fetch Like Data
   useEffect(() => {
+    let active = true;
     const fetchLikeStatus = async () => {
-      // Fetch total count
       const { count: total } = await supabase
         .from('likes')
         .select('*', { count: 'exact', head: true })
         .eq('release_id', releaseId);
       
+      if (!active) return;
       setCount(total || 0);
 
-      // Check if current user liked it
       if (user) {
         const { data } = await supabase
           .from('likes')
@@ -39,17 +40,17 @@ export default function LikeButton({ releaseId, variant = 'pill' }: LikeButtonPr
           .eq('user_id', user.id)
           .maybeSingle();
         
-        setIsLiked(!!data);
+        if (data && active) setIsLiked(true);
       }
       setLoading(false);
     };
 
     fetchLikeStatus();
+    return () => { active = false; };
   }, [releaseId, user]);
 
   // 2. Toggle Logic
   const toggleLike = async (e?: React.MouseEvent) => {
-    // Prevent event bubbling if used inside a Link/Card
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -62,11 +63,19 @@ export default function LikeButton({ releaseId, variant = 'pill' }: LikeButtonPr
 
     const previousState = isLiked;
     const previousCount = count;
+    const newState = !isLiked;
     
-    // Optimistic Update
-    setIsLiked(!isLiked);
-    setCount(isLiked ? count - 1 : count + 1);
+    // --- STEP 1: UI UPDATES ---
+    setIsLiked(newState);
+    setCount(newState ? count + 1 : count - 1);
 
+    // --- STEP 2: NOTIFY PARENT ---
+    // This unlocks the download button instantly
+    if (onLikeToggle) {
+      onLikeToggle(newState);
+    }
+
+    // --- STEP 3: DATABASE UPDATE ---
     if (previousState) {
       const { error } = await supabase
         .from('likes')
@@ -77,6 +86,7 @@ export default function LikeButton({ releaseId, variant = 'pill' }: LikeButtonPr
       if (error) {
         setIsLiked(previousState);
         setCount(previousCount);
+        if (onLikeToggle) onLikeToggle(previousState);
       }
     } else {
       const { error } = await supabase
@@ -86,13 +96,12 @@ export default function LikeButton({ releaseId, variant = 'pill' }: LikeButtonPr
       if (error) {
         setIsLiked(previousState);
         setCount(previousCount);
+        if (onLikeToggle) onLikeToggle(previousState);
       }
     }
   };
 
-  // --- UI VARIANTS ---
-
-  // CIRCLE VARIANT (For Album Cards)
+  // --- UI RENDERING ---
   if (variant === 'circle') {
     return (
       <button 
@@ -102,7 +111,6 @@ export default function LikeButton({ releaseId, variant = 'pill' }: LikeButtonPr
         <motion.div
           key={isLiked ? 'liked' : 'unliked'}
           animate={isLiked ? { scale: [1, 1.4, 1] } : { scale: 1 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
         >
           {isLiked ? (
             <HiHeart className="text-red-500 text-lg md:text-xl" />
@@ -114,7 +122,6 @@ export default function LikeButton({ releaseId, variant = 'pill' }: LikeButtonPr
     );
   }
 
-  // PILL VARIANT (For Album/Single Pages)
   return (
     <button
       onClick={toggleLike}
@@ -129,18 +136,12 @@ export default function LikeButton({ releaseId, variant = 'pill' }: LikeButtonPr
               scale: [1, 1.4, 1],
               rotate: [0, 15, -15, 0] 
             } : { scale: 1 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
+            transition={{ duration: 0.4 }}
           >
             {isLiked ? (
-              <HiHeart 
-                className="text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.6)]" 
-                size={20} 
-              />
+              <HiHeart className="text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.6)]" size={20} />
             ) : (
-              <HiOutlineHeart 
-                className="text-neutral-500 group-hover:text-red-500 transition-colors" 
-                size={20} 
-              />
+              <HiOutlineHeart className="text-neutral-500 group-hover:text-red-500 transition-colors" size={20} />
             )}
           </motion.div>
         </AnimatePresence>

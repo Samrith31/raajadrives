@@ -7,10 +7,11 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 interface StarRatingProps {
-  albumId: string; // this is your release_id
+  albumId: string;
+  onRate?: (rating: number) => void; // ✅ Added to talk to SinglePage
 }
 
-export default function StarRating({ albumId }: StarRatingProps) {
+export default function StarRating({ albumId, onRate }: StarRatingProps) {
   const { user } = useAuth();
   const router = useRouter();
 
@@ -20,8 +21,12 @@ export default function StarRating({ albumId }: StarRatingProps) {
   const [hasVoted, setHasVoted] = useState(false);
 
   // 1️⃣ Fetch existing rating
+ // 1️⃣ Fetch existing rating
   useEffect(() => {
+    // 1. If no user, stop immediately
     if (!user) return;
+    
+    let active = true;
 
     const fetchUserRating = async () => {
       const { data, error } = await supabase
@@ -31,13 +36,25 @@ export default function StarRating({ albumId }: StarRatingProps) {
         .eq('release_id', albumId)
         .maybeSingle();
 
-      if (!error && data) {
+      // 2. Only update if the component is still mounted
+      if (!error && data && active) {
         setRating(data.score);
         setHasVoted(true);
+        
+        // 3. Notify parent if the function exists
+        if (onRate) {
+          onRate(data.score);
+        }
       }
     };
 
     fetchUserRating();
+
+    return () => { 
+      active = false; 
+    };
+    
+    // ✅ REMOVED 'onRate' from here to keep the array size constant
   }, [user, albumId]);
 
   // 2️⃣ Submit rating
@@ -55,15 +72,20 @@ export default function StarRating({ albumId }: StarRatingProps) {
 
     const { error } = await supabase
       .from('ratings')
-      .insert({
+      .upsert({ // Changed to upsert to prevent unique constraint errors
         user_id: user.id,
         release_id: albumId,
-        score: value         
+        score: value          
       });
 
     if (!error) {
       setRating(value);
       setHasVoted(true);
+      
+      // ✅ CRITICAL: Notify parent to unlock download
+      if (onRate) {
+        onRate(value);
+      }
     } else {
       console.error('Rating Error:', error.message);
     }
@@ -77,7 +99,6 @@ export default function StarRating({ albumId }: StarRatingProps) {
   const amberNeon = 'drop-shadow-[0_0_10px_rgba(251,191,36,0.9)] drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]';
 
   return (
-    /* UPDATED: Removed md:items-start to keep it centered on all screens */
     <div className="flex flex-col items-center justify-center select-none font-sans w-full">
       <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => {
@@ -115,30 +136,27 @@ export default function StarRating({ albumId }: StarRatingProps) {
           );
         })}
 
-<div className="ml-5 flex items-baseline">
-  {/* Numerical Score */}
-  <span
-    className={`text-3xl font-black font-mono tracking-tighter transition-all duration-500
-      ${
-        hasVoted
-          ? `${brightRed} drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]`
-          : 'text-white/20'
-      }`}
-  >
-    {rating > 0 ? Math.floor(rating) : '0'}
-  </span>
+        <div className="ml-5 flex items-baseline">
+          <span
+            className={`text-3xl font-black font-mono tracking-tighter transition-all duration-500
+              ${
+                hasVoted
+                  ? `${brightRed} drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]`
+                  : 'text-white/20'
+              }`}
+          >
+            {rating > 0 ? Math.floor(rating) : '0'}
+          </span>
 
-  {/* Denominator - Bold and Scaled */}
-  <span 
-    className={`text-2xl font-black tracking-tighter italic transition-colors duration-500 ml-0.5
-      ${hasVoted ? 'text-red-900/40' : 'text-neutral-800'}`}
-  >
-    /5
-  </span>
-</div>
+          <span 
+            className={`text-2xl font-black tracking-tighter italic transition-colors duration-500 ml-0.5
+              ${hasVoted ? 'text-red-900/40' : 'text-neutral-800'}`}
+          >
+            /5
+          </span>
+        </div>
       </div>
 
-      {/* UPDATED: Added justify-center to ensure text and dot stay in the middle */}
       <div className="mt-2 flex items-center justify-center gap-2 px-1">
         <div
           className={`w-[3px] h-[3px] rounded-full transition-all duration-500 

@@ -30,6 +30,18 @@ interface UserProfile {
 interface LikeRow { release_id: string; }
 interface RatingRow { release_id: string; score: number; }
 
+// This represents a single row from the 'likes' table join
+interface LikeWithRelease {
+  created_at: string;
+  releases: Release | null; // Assuming Release is your existing interface
+}
+
+// If Supabase returns it as an array (sometimes happens with joins)
+interface LikeWithReleaseArray {
+  created_at: string;
+  releases: Release[] | Release | null;
+}
+
 export default function ProfilePage({ params }: { params: Promise<{ username: string }>; }) {
   const { username } = use(params);
   const { user, signOut } = useAuth();
@@ -141,20 +153,56 @@ const handleUpdateProfile = async () => {
 
       setProfile(formattedProfile);
       setNewUsername(formattedProfile.username);
+// 1. In your Promise.all, we cast the result to our new interface
+const [likesRes, ratingsRes, followersRes, followingRes, followStatusRes] = await Promise.all([
+  // Index 0: Likes with Joined Releases
+  supabase
+    .from('likes')
+    .select(`
+      created_at,
+      releases (*)
+    `)
+    .eq('user_id', profileData.id)
+    .order('created_at', { ascending: false }),
 
-      const [likesRes, ratingsRes, followersRes, followingRes, followStatusRes] = await Promise.all([
-        supabase.from('likes').select('release_id').eq('user_id', profileData.id),
-        supabase.from('ratings').select('release_id, score').eq('user_id', profileData.id),
-        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileData.id),
-        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profileData.id),
-        user ? supabase.from('follows').select('id').eq('follower_id', user.id).eq('following_id', profileData.id).maybeSingle() : Promise.resolve({ data: null })
-      ]);
+  // Index 1: Ratings
+  supabase
+    .from('ratings')
+    .select('release_id, score')
+    .eq('user_id', profileData.id),
 
-      const releaseIds = (likesRes.data as LikeRow[] | null)?.map(l => l.release_id) ?? [];
-      if (releaseIds.length > 0) {
-        const { data: releases } = await supabase.from('releases').select('*').in('id', releaseIds);
-        setLikedReleases((releases ?? []) as Release[]);
-      }
+  // Index 2: Followers Count
+  supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('following_id', profileData.id),
+
+  // Index 3: Following Count
+  supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('follower_id', profileData.id),
+
+  // Index 4: Current User Follow Status
+  user 
+    ? supabase.from('follows').select('id').eq('follower_id', user.id).eq('following_id', profileData.id).maybeSingle() 
+    : Promise.resolve({ data: null, error: null })
+]);
+
+// 2. Type-Safe Data Extraction (No 'any')
+const rawLikes = likesRes.data as unknown as LikeWithReleaseArray[] | null;
+
+const orderedReleases: Release[] = (rawLikes ?? [])
+  .map((item) => {
+    const profileData = Array.isArray(item.releases) ? item.releases[0] : item.releases;
+    return profileData;
+  })
+  .filter((r): r is Release => r !== null);
+
+setLikedReleases(orderedReleases);
+
+// 3. Keep your releaseIds for the Ratings mapping (if needed elsewhere)
+const releaseIds = orderedReleases.map(r => r.id);
 
       const ratingMap: Record<string, number> = {};
       (ratingsRes.data as RatingRow[] | null)?.forEach(r => { ratingMap[r.release_id] = r.score; });

@@ -1,17 +1,20 @@
+'use client';
+
+import { use, useEffect, useState } from 'react';
 import { supabase } from '@/app/lib/supabase';
+import { useAuth } from '@/app/context/AuthContext';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import CommentSection from '@/app/components/CommentSection';
 import BackgroundSlideshow from '@/app/components/BackgroundSlideshow';
 import StarRating from '@/app/components/StarRating';
 import DownloadButton from '@/app/components/DownloadButton';
-import LikeButton from '@/app/components/LikeButton'; // New Import
+import LikeButton from '@/app/components/LikeButton';
 import { IconType } from 'react-icons';
 import { HiOutlineDatabase, HiOutlineMusicNote, HiCalendar } from 'react-icons/hi';
 
-export const revalidate = 0;
+/* ---------------- TYPES ---------------- */
 
-// --- STRICT TYPES ---
 interface DatabaseRow {
   id: string;
   created_at: string;
@@ -23,8 +26,6 @@ interface DatabaseRow {
   quality: string | null;
   cover_url: string | null;
   download_url: string;
-  rating_sum: number | null;
-  rating_count: number | null;
 }
 
 interface AlbumPageProps {
@@ -37,18 +38,8 @@ interface SpecCardProps {
   value: string | number;
 }
 
-async function getAlbum(slug: string): Promise<DatabaseRow | null> {
-  const { data, error } = await supabase
-    .from('releases')
-    .select('*')
-    .eq('slug', slug)
-    .single();
+/* ---------------- HELPER ---------------- */
 
-  if (error || !data) return null;
-  return data as DatabaseRow;
-}
-
-// --- HELPER COMPONENT ---
 function SpecCard({ icon: Icon, label, value }: SpecCardProps) {
   return (
     <div className="bg-white/[0.03] border border-white/5 p-5 rounded-2xl text-left hover:border-red-500/30 transition-colors group">
@@ -65,22 +56,101 @@ function SpecCard({ icon: Icon, label, value }: SpecCardProps) {
   );
 }
 
-export default async function AlbumPage({ params }: AlbumPageProps) {
-  const { slug } = await params;
-  const album = await getAlbum(slug);
+/* ---------------- PAGE ---------------- */
 
-  if (!album) {
-    notFound();
+export default function AlbumPage({ params }: AlbumPageProps) {
+  const { user } = useAuth();
+  const { slug } = use(params);
+
+  const [state, setState] = useState<{
+    album: DatabaseRow | null;
+    isLiked: boolean;
+    userRating: number | null;
+    loading: boolean;
+  }>({
+    album: null,
+    isLiked: false,
+    userRating: null,
+    loading: true,
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      const { data: album } = await supabase
+        .from('releases')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+      if (!album || !active) {
+        if (active) setState(s => ({ ...s, loading: false }));
+        return;
+      }
+
+      let isLiked = false;
+      let userRating: number | null = null;
+
+      if (user) {
+        const [l, r] = await Promise.all([
+          supabase
+            .from('likes')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('release_id', album.id)
+            .maybeSingle(),
+          supabase
+            .from('ratings')
+            .select('score')
+            .eq('user_id', user.id)
+            .eq('release_id', album.id)
+            .maybeSingle(),
+        ]);
+
+        isLiked = !!l.data;
+        userRating = r.data?.score ?? null;
+      }
+
+      if (!active) return;
+
+      // ✅ SINGLE STATE UPDATE (no cascading renders)
+      setState({
+        album: album as DatabaseRow,
+        isLiked,
+        userRating,
+        loading: false,
+      });
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [slug, user]);
+
+  const { album, isLiked, userRating, loading } = state;
+
+  /* ---------------- STATES ---------------- */
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-t-red-600 rounded-full animate-spin" />
+      </div>
+    );
   }
+
+  if (!album) notFound();
+
+  /* ---------------- UI (UNCHANGED) ---------------- */
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-32 pb-20 px-6 relative isolate">
-      {/* Dynamic Background */}
       <BackgroundSlideshow />
 
       <div className="max-w-2xl w-full z-10 flex flex-col items-center text-center">
         
-        {/* 1. Artwork with Glow */}
+        {/* 1. Artwork */}
         <div className="relative aspect-square w-full max-w-[340px] mb-8 group">
           <div className="absolute inset-0 bg-red-600/20 blur-3xl rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000 opacity-50" />
           <div className="relative h-full w-full rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.9)] overflow-hidden border border-white/10">
@@ -90,7 +160,7 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-[2s]"
               sizes="340px"
-              priority 
+              priority
             />
             <div className="absolute top-4 left-4 px-3 py-1 bg-red-600 text-white text-[10px] font-black uppercase rounded-sm tracking-[0.2em] shadow-xl">
               {album.quality || 'Lossless'}
@@ -98,12 +168,17 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
           </div>
         </div>
 
-        {/* 2. Action Row (Likes) */}
+        {/* 2. Like */}
         <div className="mb-8">
-          <LikeButton releaseId={album.id} />
+          <LikeButton
+            releaseId={album.id}
+            onLikeToggle={(val) =>
+              setState(s => ({ ...s, isLiked: val }))
+            }
+          />
         </div>
 
-        {/* 3. Title & Artist */}
+        {/* 3. Title */}
         <div className="mb-10">
           <h1 className="font-display text-5xl md:text-6xl font-black text-white mb-3 tracking-tighter drop-shadow-2xl uppercase">
             {album.title}
@@ -117,58 +192,66 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
           </div>
         </div>
 
-        {/* 4. Rating Module */}
-        <div className="mb-10 w-full p-6 bg-black/40 border border-white/5 rounded-3xl backdrop-blur-md shadow-2xl flex flex-col items-center justify-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500 mb-4 text-center">
-            How much you like ..?
+        {/* 4. Rating */}
+        <div className="mb-10 w-full p-6 bg-black/40 border border-white/5 rounded-3xl backdrop-blur-md shadow-2xl">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500 mb-4">
+            How much you like this..?
           </p>
-          <StarRating albumId={album.id} />
+          <StarRating
+            albumId={album.id}
+            onRate={(val) =>
+              setState(s => ({ ...s, userRating: val }))
+            }
+          />
         </div>
 
-        {/* 5. Technical Specs Grid */}
+        {/* 5. Specs */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full mb-12 font-mono">
-          <SpecCard 
-            icon={HiCalendar} 
-            label="Year" 
-            value={album.year || 'N/A'} 
-          />
-          <SpecCard 
-            icon={HiOutlineDatabase} 
-            label="Source" 
+          <SpecCard icon={HiCalendar} label="Year" value={album.year || 'N/A'} />
+          <SpecCard
+            icon={HiOutlineDatabase}
+            label="Source"
             value={
-              album.type === 'lprip' ? 'Vinyl' : 
-              album.type === 'cdrip' ? 'CD' : 'Digital'
-            } 
+              album.type === 'lprip'
+                ? 'Vinyl'
+                : album.type === 'cdrip'
+                ? 'CD'
+                : 'Digital'
+            }
           />
           <div className="hidden sm:block">
-            <SpecCard 
-              icon={HiOutlineMusicNote} 
-              label="Format" 
+            <SpecCard
+              icon={HiOutlineMusicNote}
+              label="Format"
               value={
-                album.type === 'lprip' || album.type === 'cdrip' 
-                  ? 'WAV' 
+                album.type === 'lprip' || album.type === 'cdrip'
+                  ? 'WAV'
                   : 'FLAC'
-              } 
+              }
             />
           </div>
         </div>
 
-        {/* 6. Action Button */}
+        {/* 6. Download */}
         <div className="w-full flex flex-col items-center gap-6">
-          <DownloadButton downloadUrl={album.download_url} />
+          <DownloadButton
+            downloadUrl={album.download_url}
+            isLiked={isLiked}
+            isRated={!!userRating}
+          />
           <p className="text-[9px] text-neutral-500 uppercase tracking-[0.3em] font-bold">
-            Archivist Vault Access
+            Archivist Vault Security Protocol
           </p>
         </div>
       </div>
 
-      {/* 7. Community Section */}
+      {/* 7. Comments */}
       <div className="w-full max-w-2xl mt-24 z-10">
         <div className="flex items-center gap-4 mb-10">
-            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-white whitespace-nowrap italic">
-              Listener <span className="text-neutral-600">Feedback</span>
-            </h2>
-            <div className="h-px w-full bg-gradient-to-r from-white/20 to-transparent" />
+          <h2 className="text-sm font-black uppercase tracking-[0.3em] text-white italic">
+            Listener <span className="text-neutral-600">Feedback</span>
+          </h2>
+          <div className="h-px w-full bg-gradient-to-r from-white/20 to-transparent" />
         </div>
         <CommentSection slug={album.slug} />
       </div>
