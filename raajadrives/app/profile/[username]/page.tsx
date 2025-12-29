@@ -69,17 +69,32 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     return () => clearTimeout(timer);
   }, [searchQuery, searchType]);
 
-  const handleUpdateProfile = async () => {
-    if (!user || !newUsername) return;
-    setIsUpdating(true);
-    const { error } = await supabase.from('profiles').update({ username: newUsername }).eq('id', user.id);
-    if (!error) {
-      setIsEditModalOpen(false);
-      if (newUsername !== profile?.username) router.push(`/profile/${newUsername}`);
-      else window.location.reload();
-    }
-    setIsUpdating(false);
-  };
+const handleUpdateProfile = async () => {
+  if (!user || !newUsername) return;
+  setIsUpdating(true);
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ username: newUsername })
+    .eq('id', user.id);
+
+  if (!error) {
+    // 1. Update the global AuthContext state immediately
+    await refreshProfile(); 
+
+    setIsEditModalOpen(false);
+
+    // 2. Redirect to the new URL
+    if (newUsername !== profile?.username) {
+      router.push(`/profile/${newUsername}`);
+    } 
+    // No window.location.reload() needed anymore!
+  } else {
+    console.error("Update failed:", error.message);
+  }
+  
+  setIsUpdating(false);
+};
 
   const toggleFollow = async () => {
     if (!user) { router.push('/login'); return; }

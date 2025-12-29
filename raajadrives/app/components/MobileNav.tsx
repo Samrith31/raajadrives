@@ -15,14 +15,18 @@ import { useAuth } from '@/app/context/AuthContext';
 
 export default function MobileNav() {
   const pathname = usePathname();
-  const { user } = useAuth();
+ const { user, username } = useAuth();
 
   const navItems = [
     { label: 'Home', href: '/', icon: HiHome },
     { label: 'Latest', href: '/latest', icon: HiMusicNote}, // Combined search/archive
     { label: 'Feed', href: '/activity', icon: HiLightningBolt }, // YOUR NEW FEED
     { label: 'Match', href: '/discovery', icon: HiSparkles }, // YOUR NEW DISCOVERY
-    { label: 'Profile', href: user ? `/profile/${user.user_metadata.username || user.id}` : '/login', icon: HiUser },
+   { 
+ label: 'Profile', 
+    href: user ? `/profile/${username}` : '/login', // 'username' here is now fresh!
+    icon: HiUser
+},
   ];
 
   return (
