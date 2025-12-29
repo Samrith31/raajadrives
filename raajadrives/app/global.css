@@ -80,6 +80,17 @@
               filter 0.2s ease;
 }
 
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 10px;
+}
+
 /* --- CUSTOM CLASSES --- */
 
 .bg-noise {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import Image from 'next/image';
 import AlbumCard from '@/app/components/AlbumCard';
@@ -56,6 +56,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [searchType, setSearchType] = useState<'album' | 'single'>('album');
 
   const [activeModal, setActiveModal] = useState<'Followers' | 'Following' | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => { await signOut(); router.push('/login'); };
 
@@ -298,68 +299,167 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       </div>
 
       {/* --- RED NEON EDIT MODAL --- */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-neutral-900 border border-red-500/20 rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(239,68,68,0.15)]">
-              <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 text-neutral-500 hover:text-red-500 transition-colors"><HiX size={24} /></button>
-              <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3"><HiPencilAlt className="text-red-600" /> Edit <span className="text-neutral-500 font-medium text-sm mt-1">Profile</span></h2>
-              <div className="space-y-6">
-                
-                <div className="flex flex-col items-center pb-6 border-b border-white/5">
-         <AvatarUpload 
-  currentUrl={profile?.avatar_url || null} 
-  onUploadSuccess={async (newUrl) => {
-    // Update local page state
-    if (profile) setProfile({ ...profile, avatar_url: newUrl || undefined });
-    
-    // UPDATE EVERYWHERE ELSE (Navbar, etc)
-    await refreshProfile(); 
-  }} 
-/>
+<AnimatePresence>
+  {isEditModalOpen && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+        animate={{ opacity: 1, scale: 1, y: 0 }} 
+        exit={{ opacity: 0, scale: 0.9, y: 20 }} 
+        className="relative w-full max-w-lg bg-neutral-900 border border-red-500/20 rounded-[2.5rem] flex flex-col h-[85vh] h-[85svh] md:h-auto md:max-h-[90vh] shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden"
+      >
+        {/* --- COMPACT HEADER --- */}
+        <div className="p-5 md:p-7 flex items-center justify-between border-b border-white/5 shrink-0">
+          <h2 className="text-lg md:text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-2">
+            <HiPencilAlt className="text-red-600" /> Edit Profile
+          </h2>
+          <button onClick={() => setIsEditModalOpen(false)} className="text-neutral-500 hover:text-red-500 transition-colors">
+            <HiX size={22} />
+          </button>
+        </div>
+
+        {/* --- SCROLLABLE CONTENT --- */}
+        <div className="flex-1 overflow-y-auto p-5 md:p-8 space-y-4 custom-scrollbar">
+          
+          {/* COMPRESSED AVATAR SECTION */}
+          <div className="flex flex-col items-center pb-2 border-b border-white/5">
+            <div className="scale-[0.85] origin-top">
+              <AvatarUpload 
+                currentUrl={profile?.avatar_url || null} 
+                onUploadSuccess={async (newUrl) => {
+                  if (profile) setProfile({ ...profile, avatar_url: newUrl || undefined });
+                  if (refreshProfile) await refreshProfile(); 
+                }} 
+              />
+            </div>
           </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-2">UserName</label>
-                  <input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="w-full bg-black/60 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-red-600/50" placeholder="Enter new username..." />
-                </div>
-                <div className="space-y-4 pt-4 border-t border-white/5">
-                  <div className="flex gap-2">
-                    {['album', 'single'].map((type) => (
-                      <button key={type} onClick={() => setSearchType(type as 'album' | 'single')} className={`flex-1 py-2 text-[8px] font-black uppercase tracking-[0.2em] rounded-lg border transition-all ${searchType === type ? 'bg-red-600 border-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-white/5 border-white/5 text-neutral-500 hover:border-white/10'}`}>Pin {type}</button>
-                    ))}
+          <div className="space-y-4">
+            {/* Username Input */}
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">UserName</label>
+              <input 
+                type="text" 
+                value={newUsername} 
+                onChange={(e) => setNewUsername(e.target.value)} 
+                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-600/50" 
+                placeholder="Username..." 
+              />
+            </div>
+
+            {/* LETTERBOXD POSTER GRID */}
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">Curate Favorites</label>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Album Slot */}
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setSearchType('album');
+                    searchInputRef.current?.focus(); // Focus search on click
+                  }}
+                  className={`relative aspect-[2/3] rounded-2xl border-2 transition-all overflow-hidden flex flex-col items-center justify-center group
+                    ${searchType === 'album' ? 'border-red-600 bg-red-600/5 shadow-[0_0_20px_rgba(239,68,68,0.2)]' : 'border-white/5 bg-black/40 hover:border-white/20'}`}
+                >
+                  {profile?.fav_album ? (
+                    <Image src={profile.fav_album.cover_url || ""} alt="" fill className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                  ) : (
+                    <HiPlus size={24} className={`${searchType === 'album' ? 'text-red-500' : 'text-neutral-800'}`} />
+                  )}
+                  <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black via-black/80 to-transparent">
+                    <p className={`text-[9px] font-black uppercase tracking-widest text-center leading-none ${searchType === 'album' ? 'text-red-500' : 'text-neutral-500'}`}>
+                      {profile?.fav_album ? 'Swap Album' : 'Select Album'}
+                    </p>
                   </div>
-                  <div className="relative">
-                    <HiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
-                    <input type="text" placeholder={`Search ${searchType}s...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-black/60 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-xs text-white focus:border-red-600/50" />
-                    {searchResults.length > 0 && (
-                      <div className="absolute z-[110] w-full mt-2 bg-neutral-900 border border-white/10 rounded-xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                        {searchResults.map((result) => (
-                          <button key={result.id} onClick={() => setFavorite(result.id)} className="w-full flex items-center gap-3 p-3 hover:bg-red-600/10 border-b border-white/5 last:border-none group">
-                            <div className="relative w-10 h-10 rounded-md overflow-hidden shrink-0 border border-white/5"><Image src={result.cover_url || '/images/logo-2.jpeg'} alt="" fill className="object-cover" /></div>
-                            <div className="text-left truncate">
-                              <p className="text-[11px] font-bold text-white group-hover:text-red-500 transition-colors">{result.title}</p>
-                              <p className="text-[9px] text-neutral-500 uppercase tracking-tighter">{result.artist}</p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                </button>
+
+                {/* Single Slot */}
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setSearchType('single');
+                    searchInputRef.current?.focus(); // Focus search on click
+                  }}
+                  className={`relative aspect-[2/3] rounded-2xl border-2 transition-all overflow-hidden flex flex-col items-center justify-center group
+                    ${searchType === 'single' ? 'border-red-600 bg-red-600/5 shadow-[0_0_20px_rgba(239,68,68,0.2)]' : 'border-white/5 bg-black/40 hover:border-white/20'}`}
+                >
+                  {profile?.fav_single ? (
+                    <Image src={profile.fav_single.cover_url || ""} alt="" fill className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                  ) : (
+                    <HiPlus size={24} className={`${searchType === 'single' ? 'text-red-500' : 'text-neutral-800'}`} />
+                  )}
+                  <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black via-black/80 to-transparent">
+                    <p className={`text-[9px] font-black uppercase tracking-widest text-center leading-none ${searchType === 'single' ? 'text-red-500' : 'text-neutral-500'}`}>
+                      {profile?.fav_single ? 'Swap Single' : 'Select Single'}
+                    </p>
                   </div>
-                </div>
-                <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3 text-xs">
-                    <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-[0.2em]">Live Pins</p>
-                    <div className="flex justify-between items-center"><span className="text-neutral-400">Album: <span className="text-white italic">{profile?.fav_album?.title || 'None'}</span></span>{profile?.fav_album && <button onClick={() => clearFavorite('album')} className="text-[9px] font-black uppercase text-red-600">Unpin</button>}</div>
-                    <div className="flex justify-between items-center"><span className="text-neutral-400">Single: <span className="text-white italic">{profile?.fav_single?.title || 'None'}</span></span>{profile?.fav_single && <button onClick={() => clearFavorite('single')} className="text-[9px] font-black uppercase text-red-600">Unpin</button>}</div>
-                </div>
-                <button onClick={handleUpdateProfile} disabled={isUpdating} className="w-full py-5 bg-red-600 text-white font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-red-500 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
-                  {isUpdating ? 'Syncing...' : <><HiCheck /> Commit Changes</>}
                 </button>
               </div>
-            </motion.div>
+            </div>
+
+            {/* SEARCH INPUT */}
+            <div className="relative">
+              <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+              <input 
+                ref={searchInputRef} // Attach Ref here
+                type="text" 
+                placeholder={`Search for ${searchType}...`} 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="w-full bg-black/40 border border-white/5 rounded-xl pl-9 pr-4 py-3 text-[11px] text-white focus:outline-none focus:border-red-600/50 font-bold placeholder:text-neutral-700" 
+              />
+
+              {/* FLOATING SEARCH RESULTS (UPWARDS) */}
+              {searchResults.length > 0 && (
+                <div className="absolute bottom-full left-0 w-full mb-3 bg-neutral-900 border border-white/10 rounded-[1.5rem] overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.8)] z-[120]">
+                  {searchResults.map((result) => (
+                    <button 
+                      key={result.id} 
+                      onClick={() => setFavorite(result.id)} 
+                      className="w-full flex items-center gap-3 p-4 hover:bg-red-600/10 border-b border-white/5 last:border-none text-left group"
+                    >
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10">
+                        <Image src={result.cover_url || ""} alt="" fill className="object-cover" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-black text-white group-hover:text-red-500 transition-colors uppercase truncate">{result.title}</p>
+                        <p className="text-[9px] text-neutral-500 font-bold uppercase truncate">{result.artist}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+
+          {/* ACTIVE PINS STATUS */}
+          <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1 text-[9px]">
+            <p className="text-neutral-600 font-bold uppercase tracking-[0.2em]">Active Pins</p>
+            <div className="flex justify-between items-center text-white italic">
+              <span className="truncate max-w-[75%]">Album: {profile?.fav_album?.title || 'None'}</span>
+              {profile?.fav_album && <button onClick={() => clearFavorite('album')} className="text-red-600 font-black">UNPIN</button>}
+            </div>
+            <div className="flex justify-between items-center text-white italic">
+              <span className="truncate max-w-[75%]">Single: {profile?.fav_single?.title || 'None'}</span>
+              {profile?.fav_single && <button onClick={() => clearFavorite('single')} className="text-red-600 font-black">UNPIN</button>}
+            </div>
+          </div>
+        </div>
+
+        {/* FIXED FOOTER */}
+        <div className="p-5 md:p-8 bg-neutral-900 border-t border-white/5 shrink-0 pb-12 md:pb-8">
+          <button 
+            onClick={handleUpdateProfile} 
+            disabled={isUpdating} 
+            className="w-full py-4 bg-red-600 text-white font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-red-500 transition-all flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(239,68,68,0.2)] active:scale-95"
+          >
+            {isUpdating ? 'Syncing...' : <><HiCheck /> Commit Changes</>}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
 
       {/* --- FOLLOW/FOLLOWING MODALS --- */}
       {profile?.id && (
