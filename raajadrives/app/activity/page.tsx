@@ -46,6 +46,26 @@ export default function ActivityPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const formatRelativeTime = (dateString: string) => {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'now';
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes}m`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays}d`;
+
+  // Fallback to short date (e.g., Dec 29) if over a week old
+  return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
   useEffect(() => {
     if (!user) return;
     const fetchActivity = async () => {
@@ -147,9 +167,9 @@ export default function ActivityPage() {
                       <HiBadgeCheck className="text-red-600 shrink-0 drop-shadow-[0_0_5px_rgba(220,38,38,0.5)]" size={16} />
                     </div>
                   </div>
-                  <div className="text-[9px] text-neutral-500 font-bold uppercase whitespace-nowrap tracking-widest">
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </div>
+                 <div className="text-[10px] text-neutral-500 font-black uppercase tracking-[0.15em] tabular-nums">
+  {formatRelativeTime(item.created_at)}
+</div>
                 </div>
 
                 {/* 2. The Artwork */}
