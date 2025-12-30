@@ -182,7 +182,7 @@ export default function SinglePage({ params }: PageProps) {
         {/* Rating */}
         <div className="mb-10 w-full p-6 bg-black/40 border border-white/5 rounded-3xl backdrop-blur-md">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500 mb-4">
-            How much you like ..?
+            Like and Rate to Download..
           </p>
           <StarRating
             albumId={single.id}
