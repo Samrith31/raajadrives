@@ -86,10 +86,10 @@ export default function NotificationsPage() {
         {/* Header Section - Adjusted margins for mobile height */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-white/5 pb-6 md:pb-10">
           <div>
-            <h1 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter mb-1">Logs</h1>
+            <h1 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter mb-1">Notifications</h1>
             <p className="text-[9px] font-bold text-red-600/50 uppercase tracking-[0.4em] flex items-center gap-2">
               <span className="w-1 h-1 bg-red-600 rounded-full animate-pulse" />
-              {notifications.length} Entries Detected
+              {notifications.length} Updates Detected
             </p>
           </div>
           
@@ -99,7 +99,7 @@ export default function NotificationsPage() {
             className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl md:rounded-full text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30"
           >
             <HiCheckCircle className="text-green-500" size={16} />
-            Clear All
+            Mark as Read
           </button>
         </div>
 
@@ -125,7 +125,7 @@ export default function NotificationsPage() {
                   <Link href={n.link || '#'} className="block group/link">
                     <p className={`text-sm md:text-lg leading-tight mb-0.5 transition-colors ${!n.is_read ? 'text-white font-bold' : 'text-neutral-500 font-medium group-hover/link:text-neutral-300'}`}>
                       <span className="text-red-600 uppercase font-black tracking-tighter mr-1 italic">
-                        {n.actor?.username || 'SYSTEM'}
+                        {n.actor?.username || 'RAAJADRIVES '}
                       </span>
                       {n.content}
                     </p>

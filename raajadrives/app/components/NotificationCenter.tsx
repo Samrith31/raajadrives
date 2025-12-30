@@ -132,7 +132,11 @@ export default function NotificationCenter() {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-3 w-80 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[100] overflow-hidden backdrop-blur-xl"
+            className="fixed inset-x-0 top-auto mt-3 mx-auto w-[90vw] max-w-sm
+  md:absolute md:inset-x-auto md:right-0 md:mx-0 md:w-80
+  bg-[#0a0a0a] border border-white/10 rounded-2xl
+  shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[100]
+  overflow-hidden backdrop-blur-xl"
           >
             {/* ... Dropdown content stays exactly the same ... */}
             <div className="p-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
