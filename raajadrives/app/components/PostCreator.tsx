@@ -160,7 +160,7 @@ export default function PostCreatorModal({
                       <input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search album, track or composer…"
+                        placeholder="Search Single or Album…"
                         autoFocus
                         className="bg-transparent w-full text-sm font-medium outline-none text-white placeholder:text-neutral-700"
                       />
