@@ -204,7 +204,7 @@ export default function ActivityPage() {
                     {/* Dynamic Status Text */}
                     <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest mt-0.5">
                     {item.type === 'post'
-  ? 'Shared a Log'
+  ? 'Shared a Post'
   : `Logged a ${item.release.type === 'single' ? 'Single' : 'Album'}`
 }
 
