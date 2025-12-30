@@ -23,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // Added this

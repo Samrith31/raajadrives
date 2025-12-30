@@ -9,6 +9,7 @@ import Footer from "@/app/components/footer";
 import MobileNav from "@/app/components/MobileNav";
 import { AuthProvider } from "@/app/context/AuthContext";
 import NavbarAuth from "@/app/components/NavbarAuth";
+import NotificationCenter from "@/app/components/NotificationCenter"; // ✅ Import NotificationCenter
 import { HiLightningBolt, HiUsers, HiSearch, HiX } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -51,7 +52,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
                 
                 <div className="w-full">
-                  {/* Pass onSubmit to close overlay when Enter is pressed */}
                   <SearchBar onSubmit={() => setIsSearchOpen(false)} /> 
                 </div>
 
@@ -83,13 +83,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </h1>
               </Link>
 
-              {/* Mobile Search Trigger */}
-              <button
-                onClick={() => setIsSearchOpen(true)}
-                className="md:hidden p-2 rounded-full bg-white/5 border border-white/10 text-neutral-400"
-              >
-                <HiSearch size={20} />
-              </button>
+              {/* Mobile Right Section (Search + Notifications) */}
+              <div className="flex items-center gap-2 md:hidden">
+                <NotificationCenter /> {/* ✅ Notifications on Mobile */}
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="p-2 rounded-full bg-white/5 border border-white/10 text-neutral-400"
+                >
+                  <HiSearch size={20} />
+                </button>
+              </div>
 
               {/* Desktop nav */}
               <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-400">
@@ -104,6 +107,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <HiUsers size={18} className="text-red-600" />
                   <span className="text-[10px] font-black uppercase tracking-widest italic">Discover</span>
                 </Link>
+                <NotificationCenter /> {/* ✅ Notifications on Desktop */}
                 <NavbarAuth />
               </nav>
             </div>

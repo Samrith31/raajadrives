@@ -108,21 +108,52 @@ const handleUpdateProfile = async () => {
   setIsUpdating(false);
 };
 
-  const toggleFollow = async () => {
-    if (!user) { router.push('/login'); return; }
-    setFollowLoading(true);
-    if (isFollowing) {
-      await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', profile?.id);
-      setFollowerCount(prev => prev - 1);
-      setIsFollowing(false);
-    } else {
-      await supabase.from('follows').insert({ follower_id: user.id, following_id: profile?.id });
-      setFollowerCount(prev => prev + 1);
-      setIsFollowing(true);
-    }
-    setFollowLoading(false);
-  };
+const toggleFollow = async () => {
+  if (!user) { router.push('/login'); return; }
+  setFollowLoading(true);
 
+  if (isFollowing) {
+    // --- UNFOLLOW ---
+    const { error } = await supabase
+      .from('follows')
+      .delete()
+      .eq('follower_id', user.id)
+      .eq('following_id', profile?.id);
+
+    if (!error) {
+      setFollowerCount((prev) => prev - 1);
+      setIsFollowing(false);
+    }
+  } else {
+    // --- FOLLOW ---
+    const { error: followError } = await supabase
+      .from('follows')
+      .insert({ follower_id: user.id, following_id: profile?.id });
+
+    if (!followError) {
+      // 1. Instant UI update
+      setFollowerCount((prev) => prev + 1);
+      setIsFollowing(true);
+
+      // 2. Fetch YOUR username (the Actor) to create the link
+      const { data: actorProfile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user?.id)
+        .single();
+
+      // 3. Create the notification for the profile owner
+      await supabase.from('notifications').insert({
+        user_id: profile?.id, // Person being followed
+        actor_id: user.id,    // You
+        type: 'follow',
+        content: 'started following your archive',
+        link: `/profile/${actorProfile?.username}`, // Link back to YOU
+      });
+    }
+  }
+  setFollowLoading(false);
+};
   const setFavorite = async (releaseId: string) => {
     if (!user) return;
     const column = searchType === 'album' ? 'favorite_album_id' : 'favorite_single_id';

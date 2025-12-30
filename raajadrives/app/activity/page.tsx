@@ -118,7 +118,8 @@ export default function ActivityPage() {
   );
 
   return (
-    <div className="min-h-screen bg-neutral-950 pt-24 pb-12 px-4 sm:px-6">
+   <div className="min-h-screen bg-neutral-950 pt-6 sm:pt-24 pb-12 px-4 sm:px-6">
+
       <div className="max-w-2xl mx-auto">
         
         {/* --- HEADER --- */}
