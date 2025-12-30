@@ -268,20 +268,32 @@ export default function ActivityPage() {
                 )}
 
                 {/* 5. Release Info */}
-                <div className={`mt-3 px-1 ${item.type === 'post' ? 'pt-2' : ''}`}>
-                  <Link href={`/${item.release.type === 'single' ? 'single' : 'flac'}/${item.release.slug}`}>
-                    <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase truncate group-hover:text-red-600 transition-colors">
-                      {item.release.title}
-                    </h2>
-                    <p className="text-sm md:text-base text-neutral-400 font-medium uppercase truncate tracking-tighter mt-1">
-                      {item.release.artist}
-                    </p>
-                  </Link>
-                  <div className="flex items-center gap-2 mt-4">
-                     <div className="h-[2px] w-6 bg-red-600" />
-                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-red-500 italic">{item.username} Logged</span>
-                  </div>
-                </div>
+              <div className={`mt-3 px-1 ${item.type === 'post' ? 'pt-2' : ''}`}>
+  <Link href={`/${item.release.type === 'single' ? 'single' : 'flac'}/${item.release.slug}`}>
+    <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase truncate group-hover:text-red-600 transition-colors">
+      {item.release.title}
+    </h2>
+  <p
+  className={`text-sm md:text-base font-medium uppercase truncate tracking-tighter mt-1
+    ${item.type === 'post' ? 'text-red-500' : 'text-neutral-400'}
+  `}
+>
+  {item.release.artist}
+</p>
+
+  </Link>
+
+  {/* Render ONLY for album/single logs */}
+  {item.type !== 'post' && (
+    <div className="flex items-center gap-2 mt-4">
+      <div className="h-[2px] w-6 bg-red-600" />
+      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-red-500 italic">
+        {item.username} Logged
+      </span>
+    </div>
+  )}
+</div>
+
               </motion.div>
             ))}
           </div>
