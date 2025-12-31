@@ -4,6 +4,7 @@ import AlbumGrid from '@/app/components/AlbumGrid';
 import SectionHeader from '@/app/components/ui/SectionHeader';
 import HeroSlideshow from '@/app/components/HeroSection'; 
 import LatestDrops from '@/app/components/LatestDrops';
+import HotHits from '@/app/components/HotHits';
 
 export const revalidate = 0;
 
@@ -57,6 +58,8 @@ export default async function HomePage() {
 
       {/* Latest Drops */}
       <LatestDrops releases={releases} />
+
+      <HotHits />
 
       <div className="max-w-7xl mx-auto px-6 mt-16 space-y-20">
         

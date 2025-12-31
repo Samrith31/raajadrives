@@ -53,7 +53,7 @@ interface ActivityItem {
   release: ReleaseData;
 }
 export default function ActivityPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -72,7 +72,11 @@ export default function ActivityPage() {
   };
 
   const fetchActivity = useCallback(async () => {
-  if (!user) return;
+ if (!user) {
+      setLoading(false);
+      return;
+    }
+
   
   try {
     const { data: following } = await supabase.from('follows').select('following_id').eq('follower_id', user.id);
