@@ -17,18 +17,15 @@ export default function MobileNav() {
   const pathname = usePathname();
  const { user, username } = useAuth();
 
- const profileHref = user 
-  ? (username ? `/profile/${username}` : `/profile/id-${user.id}`) 
-  : '/login';
 
   const navItems = [
     { label: 'Home', href: '/', icon: HiHome },
     { label: 'Latest', href: '/latest', icon: HiMusicNote}, // Combined search/archive
     { label: 'Feed', href: '/activity', icon: HiLightningBolt }, // YOUR NEW FEED
     { label: 'Match', href: '/discovery', icon: HiSparkles }, // YOUR NEW DISCOVERY
-  { 
+{ 
   label: 'Profile', 
-  href: profileHref, 
+  href: user && username ? `/profile/${username}` : '/login', 
   icon: HiUser 
 },
   ];
