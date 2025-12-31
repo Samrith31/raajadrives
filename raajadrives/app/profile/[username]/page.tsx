@@ -44,9 +44,11 @@ interface LikeWithReleaseArray {
 
 export default function ProfilePage({ params }: { params: Promise<{ username: string }>; }) {
   const { username } = use(params);
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();   // ✅ get auth loading
   const router = useRouter();
   const { refreshProfile } = useAuth();
+  
+
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [likedReleases, setLikedReleases] = useState<Release[]>([]);
@@ -244,15 +246,23 @@ const releaseIds = orderedReleases.map(r => r.id);
       setLoading(false);
     };
     fetchProfile();
-  }, [username, user]);
+  },[username]);
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-2 border-red-600/20 border-t-red-600 rounded-full animate-spin" />
-      </div>
-    );
+  useEffect(() => {
+  if (!authLoading && !user) {
+    router.replace('/login');
   }
+}, [authLoading, user, router]);
+
+
+
+if (loading && !profile) {
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center">
+      <div className="w-8 h-8 border-2 border-red-600/20 border-t-red-600 rounded-full animate-spin" />
+    </div>
+  );
+}
 
   const isOwnProfile = user?.id === profile?.id;
 
