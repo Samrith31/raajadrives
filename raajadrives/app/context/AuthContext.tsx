@@ -1,16 +1,16 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
   username: string | null;
-  avatarUrl: string | null; // Added this
+  avatarUrl: string | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>; // Added this to allow manual updates
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,54 +23,65 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // Added this
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Updated to fetch both username and avatar_url
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('username, avatar_url') // Fetch both
-      .eq('id', userId)
-      .single();
+  // 1. Memoized fetchProfile to ensure stability
+  const fetchProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', userId)
+        .single();
 
-    if (!error && data) {
-      setUsername(data.username);
-      setAvatarUrl(data.avatar_url);
+      if (!error && data) {
+        setUsername(data.username);
+        setAvatarUrl(data.avatar_url);
+      }
+    } catch (err) {
+      console.error("Profile sync error:", err);
     }
-  };
+  }, []);
 
-  // This function can be called from any page to force a UI refresh
   const refreshProfile = async () => {
     if (user) await fetchProfile(user.id);
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) {
-        setUser(data.session.user);
-        fetchProfile(data.session.user.id);
+    // 2. Optimized Session Initialization
+    const initSession = async () => {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setUser(session.user);
+        // Wait for profile data BEFORE dropping the loading flag
+        await fetchProfile(session.user.id);
+      }
+      
+      setLoading(false);
+    };
+
+    initSession();
+
+    // 3. Listen for Auth Changes (Tab refocus/Chrome wake-up)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        await fetchProfile(session.user.id);
+      } else {
+        setUser(null);
+        setUsername(null);
+        setAvatarUrl(null);
       }
       setLoading(false);
     });
 
-    const { data: { subscription } } =
-      supabase.auth.onAuthStateChange((_event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          fetchProfile(session.user.id);
-        } else {
-          setUser(null);
-          setUsername(null);
-          setAvatarUrl(null);
-        }
-      });
-
     return () => subscription.unsubscribe();
-  }, []);
+  }, [fetchProfile]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
