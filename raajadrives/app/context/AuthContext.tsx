@@ -1,83 +1,75 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
   username: string | null;
-  avatarUrl: string | null;
+  avatarUrl: string | null; // Added this
   loading: boolean;
   signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: () => Promise<void>; // Added this to allow manual updates
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: null, username: null, avatarUrl: null, loading: true,
-  signOut: async () => {}, refreshProfile: async () => {},
+  user: null,
+  username: null,
+  avatarUrl: null,
+  loading: true,
+  signOut: async () => {},
+  refreshProfile: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // Added this
   const [loading, setLoading] = useState(true);
-  
-  // Guard to prevent multiple initialization calls
-  const authInitialized = useRef(false);
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username, avatar_url')
-        .eq('id', userId)
-        .single();
+  // Updated to fetch both username and avatar_url
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username, avatar_url') // Fetch both
+      .eq('id', userId)
+      .single();
 
-      if (!error && data) {
-        setUsername(data.username);
-        setAvatarUrl(data.avatar_url);
-      }
-    } catch (err) {
-      console.error('Maestro Sync Error:', err);
+    if (!error && data) {
+      setUsername(data.username);
+      setAvatarUrl(data.avatar_url);
     }
-  }, []);
+  };
 
-  const refreshProfile = useCallback(async () => {
+  // This function can be called from any page to force a UI refresh
+  const refreshProfile = async () => {
     if (user) await fetchProfile(user.id);
-  }, [user, fetchProfile]);
+  };
 
   useEffect(() => {
-    const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        setUser(session.user);
-        await fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    };
-
-    if (!authInitialized.current) {
-      initAuth();
-      authInitialized.current = true;
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        await fetchProfile(session.user.id);
-      } else {
-        setUser(null);
-        setUsername(null);
-        setAvatarUrl(null);
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) {
+        setUser(data.session.user);
+        fetchProfile(data.session.user.id);
       }
       setLoading(false);
     });
 
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          fetchProfile(session.user.id);
+        } else {
+          setUser(null);
+          setUsername(null);
+          setAvatarUrl(null);
+        }
+      });
+
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
