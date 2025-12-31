@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from 'react';
 import { supabase } from '@/app/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
@@ -28,8 +35,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Memoized fetchProfile to ensure stability
+  // Prevent duplicate profile fetches on resume
+  const syncingRef = useRef(false);
+
+  /* ------------------ PROFILE FETCH ------------------ */
   const fetchProfile = useCallback(async (userId: string) => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -42,33 +55,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAvatarUrl(data.avatar_url);
       }
     } catch (err) {
-      console.error("Profile sync error:", err);
+      console.error('Profile sync error:', err);
+    } finally {
+      syncingRef.current = false;
     }
   }, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) await fetchProfile(user.id);
-  };
+  }, [user, fetchProfile]);
 
+  /* ------------------ SESSION SYNC ------------------ */
+  const syncSession = useCallback(async () => {
+    setLoading(true);
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session?.user) {
+      setUser(session.user);
+      await fetchProfile(session.user.id);
+    } else {
+      setUser(null);
+      setUsername(null);
+      setAvatarUrl(null);
+    }
+
+    setLoading(false);
+  }, [fetchProfile]);
+
+  /* ------------------ INITIAL LOAD + AUTH EVENTS ------------------ */
   useEffect(() => {
-    // 2. Optimized Session Initialization
-    const initSession = async () => {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        setUser(session.user);
-        // Wait for profile data BEFORE dropping the loading flag
-        await fetchProfile(session.user.id);
-      }
-      
-      setLoading(false);
-    };
+    syncSession();
 
-    initSession();
-
-    // 3. Listen for Auth Changes (Tab refocus/Chrome wake-up)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_, session) => {
       if (session?.user) {
         setUser(session.user);
         await fetchProfile(session.user.id);
@@ -81,8 +104,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [syncSession, fetchProfile]);
 
+  /* ------------------ MOBILE TAB RESUME FIX ------------------ */
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncSession();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () =>
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [syncSession]);
+
+  /* ------------------ SIGN OUT ------------------ */
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -91,7 +128,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, username, avatarUrl, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        username,
+        avatarUrl,
+        loading,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
