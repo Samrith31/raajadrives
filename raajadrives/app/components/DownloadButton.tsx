@@ -68,9 +68,10 @@ export default function DownloadButton({ downloadUrl, isLiked, isRated }: Downlo
             <p className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.3em] italic mb-1">
               File Encryption Active
             </p>
-            <p className="text-[9px] font-bold text-neutral-700 uppercase tracking-widest">
-              Like and Rate to Download
-            </p>
+                     <p className="text-[12px] font-black uppercase tracking-[0.3em] text-white mb-4">
+  Like and Rate to Download..
+</p>
+     
           </div>
         </div>
 
