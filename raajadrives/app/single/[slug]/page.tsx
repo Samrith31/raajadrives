@@ -14,6 +14,7 @@ import LikeButton from '@/app/components/LikeButton';
 
 import { IconType } from 'react-icons';
 import { HiCalendar } from 'react-icons/hi';
+import AddToCrateTrigger from '@/app/components/AddToCrateTrigger';
 
 /* ---------------- TYPES ---------------- */
 
@@ -70,6 +71,8 @@ export default function SinglePage({ params }: PageProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [userRating, setUserRating] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+
+  
 
   useEffect(() => {
     let active = true;
@@ -202,6 +205,11 @@ export default function SinglePage({ params }: PageProps) {
           isLiked={isLiked}
           isRated={userRating !== null && userRating > 0}
         />
+
+        {/* ADD TO CRATE TRIGGER PLACED HERE */}
+                  <div className="mt-6 w-full flex justify-center">
+  <AddToCrateTrigger releaseId={single.id} title={single.title} />
+</div>
       </div>
 
       {/* Comments */}

@@ -12,6 +12,7 @@ import DownloadButton from '@/app/components/DownloadButton';
 import LikeButton from '@/app/components/LikeButton';
 import { IconType } from 'react-icons';
 import { HiOutlineDatabase, HiOutlineMusicNote, HiCalendar } from 'react-icons/hi';
+import AddToCrateTrigger from '@/app/components/AddToCrateTrigger';
 
 /* ---------------- TYPES ---------------- */
 
@@ -114,7 +115,6 @@ export default function AlbumPage({ params }: AlbumPageProps) {
 
       if (!active) return;
 
-      // ✅ SINGLE STATE UPDATE (no cascading renders)
       setState({
         album: album as DatabaseRow,
         isLiked,
@@ -130,8 +130,6 @@ export default function AlbumPage({ params }: AlbumPageProps) {
 
   const { album, isLiked, userRating, loading } = state;
 
-  /* ---------------- STATES ---------------- */
-
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -141,8 +139,6 @@ export default function AlbumPage({ params }: AlbumPageProps) {
   }
 
   if (!album) notFound();
-
-  /* ---------------- UI (UNCHANGED) ---------------- */
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-32 pb-20 px-6 relative isolate">
@@ -232,13 +228,23 @@ export default function AlbumPage({ params }: AlbumPageProps) {
           </div>
         </div>
 
-        {/* 6. Download */}
-        <div className="w-full flex flex-col items-center gap-6">
-          <DownloadButton
-            downloadUrl={album.download_url}
-            isLiked={isLiked}
-            isRated={!!userRating}
-          />
+        {/* 6. Download & Actions */}
+        <div className="w-full flex flex-col items-center gap-4">
+  {/* Download Button on Top */}
+  <DownloadButton
+    downloadUrl={album.download_url}
+    isLiked={isLiked}
+    isRated={userRating !== null && userRating > 0}
+  />
+
+  {/* Add to Crate Trigger directly below */}
+  <div className="w-full max-w-[340px] opacity-80 hover:opacity-100 transition-opacity">
+    <AddToCrateTrigger 
+      releaseId={album.id} 
+      title={album.title} 
+    />
+  </div>
+          
           <p className="text-[9px] text-neutral-500 uppercase tracking-[0.3em] font-bold">
             Archivist Vault Security Protocol
           </p>
