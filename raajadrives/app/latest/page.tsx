@@ -55,7 +55,7 @@ export default async function LatestPage() {
             let prefix = '/flac';
             
             if (album.is_single === true) {
-              prefix = '/single'; 
+             
             } else if (album.type === 'lprip') {
               prefix = '/lprips';
             } else if (album.type === 'cdrip') {

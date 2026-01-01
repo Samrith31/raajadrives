@@ -57,6 +57,7 @@ export default function Footer() {
               <li><Link href="/flac" className="hover:text-red-500 transition-colors">Digital FLAC</Link></li>
               <li><Link href="/lprips" className="hover:text-red-500 transition-colors">Vinyl Rips</Link></li>
               <li><Link href="/cdrips" className="hover:text-red-500 transition-colors">CD Archive</Link></li>
+              <li><Link href="/dmca" className="hover:text-red-500 transition-colors">DMCA</Link></li>
             </ul>
           </div>
 

@@ -75,6 +75,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [activeModal, setActiveModal] = useState<'Followers' | 'Following' | null>(null);
   const [userCrates, setUserCrates] = useState<Crate[]>([]);
 
+   const searchInputRef = useRef<HTMLInputElement>(null);
+
+
   // 1. DATA FETCHING EFFECT
   useEffect(() => {
     let ignore = false; // Prevents state updates on unmounted component
@@ -200,12 +203,19 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     setFollowLoading(false);
   };
 
-  const setFavorite = async (releaseId: string) => {
-    if (!user) return;
-    const column = searchType === 'album' ? 'favorite_album_id' : 'favorite_single_id';
-    await supabase.from('profiles').update({ [column]: releaseId }).eq('id', user.id);
-    window.location.reload();
-  };
+ const setFavorite = async (releaseId: string) => {
+    if (!user) return;
+    const column = searchType === 'album' ? 'favorite_album_id' : 'favorite_single_id';
+    await supabase.from('profiles').update({ [column]: releaseId }).eq('id', user.id);
+    window.location.reload();
+  };
+
+  const clearFavorite = async (type: 'album' | 'single') => {
+    if (!user) return;
+    const column = type === 'album' ? 'favorite_album_id' : 'favorite_single_id';
+    await supabase.from('profiles').update({ [column]: null }).eq('id', user.id);
+    window.location.reload();
+  };
 
   useEffect(() => {
     if (!authLoading && !user) { router.replace('/login'); }
@@ -281,34 +291,62 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           </div>
         </div>
 
-        {/* --- MASTERPIECE SPOTLIGHT --- */}
+    {/* --- MASTERPIECE SPOTLIGHT --- */}
+
         <div className="mb-12">
+
           <div className="flex items-center gap-2 mb-6 px-1">
+
             <div className="h-3 w-[2px] bg-red-600" />
+
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50">Favorite <span className="text-white">Raaja&apos;s</span></h3>
+
           </div>
+
           <div className="grid grid-cols-2 gap-3 md:gap-6">
+
             <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4 group rounded-2xl bg-neutral-900/40 border border-white/5 p-2 md:p-3 hover:bg-neutral-900/60 transition-all backdrop-blur-sm overflow-hidden">
+
               <div className="relative aspect-square w-full md:w-24 shrink-0 rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-neutral-950">
+
                 {profile?.fav_album ? <Image src={profile.fav_album.cover_url || '/images/logo-2.jpeg'} alt="Fav Album" fill className="object-cover group-hover:scale-110 transition-transform duration-700" /> : <button onClick={() => isOwnProfile && setIsEditModalOpen(true)} className="w-full h-full flex items-center justify-center text-neutral-700 hover:text-red-500"><HiPlus size={22} /></button>}
+
                 <div className="absolute top-2 right-2 w-1 h-1 rounded-full bg-red-600 shadow-[0_0_8px_#ef4444] animate-pulse" />
+
               </div>
+
               <div className="flex-1 min-w-0 text-center md:text-left pb-2 md:pb-0">
+
                 <p className="text-[7px] md:text-[8px] font-black uppercase tracking-widest text-red-500 mb-1 italic">Favorite Album</p>
+
                 <h4 className="text-[10px] md:text-base font-bold text-white truncate leading-tight mb-0.5">{profile?.fav_album?.title || "Assign Album"}</h4>
+
               </div>
+
             </div>
+
             <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4 group rounded-2xl bg-neutral-900/40 border border-white/5 p-2 md:p-3 hover:bg-neutral-900/60 transition-all backdrop-blur-sm overflow-hidden">
+
               <div className="relative aspect-square w-full md:w-24 shrink-0 rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-neutral-950">
+
                 {profile?.fav_single ? <Image src={profile.fav_single.cover_url || '/images/logo-2.jpeg'} alt="Fav Single" fill className="object-cover group-hover:scale-110 transition-transform duration-700" /> : <button onClick={() => isOwnProfile && setIsEditModalOpen(true)} className="w-full h-full flex items-center justify-center text-neutral-700 hover:text-amber-500"><HiPlus size={22} /></button>}
+
                 <div className="absolute top-2 right-2 w-1 h-1 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b] animate-pulse" />
+
               </div>
+
               <div className="flex-1 min-w-0 text-center md:text-left pb-2 md:pb-0">
+
                 <p className="text-[7px] md:text-[8px] font-black uppercase tracking-widest text-amber-500 mb-1 italic">Favorite Single</p>
+
                 <h4 className="text-[10px] md:text-base font-bold text-white truncate leading-tight mb-0.5">{profile?.fav_single?.title || "Assign Single"}</h4>
+
               </div>
+
             </div>
+
           </div>
+
         </div>
 
         {/* --- COLLECTION GRID --- */}
@@ -407,47 +445,329 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </div>
       </div>
 
-      {/* --- EDIT MODAL --- */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-neutral-900 border border-red-500/20 rounded-[2.5rem] flex flex-col h-[85vh] md:h-auto md:max-h-[90vh] shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
-              <div className="p-5 md:p-7 flex items-center justify-between border-b border-white/5 shrink-0">
-                <h2 className="text-lg md:text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-2"><HiPencilAlt className="text-red-600" /> Edit Profile</h2>
-                <button onClick={() => setIsEditModalOpen(false)} className="text-neutral-500 hover:text-red-500"><HiX size={22} /></button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-5 md:p-8 space-y-4">
-                <AvatarUpload currentUrl={profile?.avatar_url || null} onUploadSuccess={async (newUrl) => { if (profile) setProfile({ ...profile, avatar_url: newUrl || undefined }); await refreshProfile(); }} />
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">UserName</label>
-                  <input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-600/50" />
-                </div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => setSearchType('album')} className={`relative aspect-[2/3] rounded-2xl border-2 ${searchType === 'album' ? 'border-red-600' : 'border-white/5'}`}>
-                      {profile?.fav_album ? <Image src={profile.fav_album.cover_url || ""} alt="" fill className="object-cover opacity-60" /> : <HiPlus className="m-auto text-neutral-800" />}
-                    </button>
-                    <button onClick={() => setSearchType('single')} className={`relative aspect-[2/3] rounded-2xl border-2 ${searchType === 'single' ? 'border-red-600' : 'border-white/5'}`}>
-                      {profile?.fav_single ? <Image src={profile.fav_single.cover_url || ""} alt="" fill className="object-cover opacity-60" /> : <HiPlus className="m-auto text-neutral-800" />}
-                    </button>
-                  </div>
-                  <input type="text" placeholder={`Search for ${searchType}...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white" />
-                  {searchResults.length > 0 && (
-                    <div className="bg-neutral-800 rounded-xl overflow-hidden">
-                      {searchResults.map(res => (
-                        <button key={res.id} onClick={() => setFavorite(res.id)} className="w-full p-3 text-left hover:bg-red-600/20 text-xs text-white uppercase font-bold">{res.title}</button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="p-5 md:p-8 bg-neutral-900 border-t border-white/5">
-                <button onClick={handleUpdateProfile} disabled={isUpdating} className="w-full py-4 bg-red-600 text-white font-black uppercase tracking-[0.3em] rounded-2xl shadow-xl">{isUpdating ? 'Syncing...' : 'Commit Changes'}</button>
-              </div>
-            </motion.div>
+<AnimatePresence>
+
+  {isEditModalOpen && (
+
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+
+      <motion.div
+
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+
+        className="relative w-full max-w-lg bg-neutral-900 border border-red-500/20 rounded-[2.5rem] flex flex-col h-[85vh] h-[85svh] md:h-auto md:max-h-[90vh] shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden"
+
+      >
+
+        {/* --- COMPACT HEADER --- */}
+
+        <div className="p-5 md:p-7 flex items-center justify-between border-b border-white/5 shrink-0">
+
+          <h2 className="text-lg md:text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-2">
+
+            <HiPencilAlt className="text-red-600" /> Edit Profile
+
+          </h2>
+
+          <button onClick={() => setIsEditModalOpen(false)} className="text-neutral-500 hover:text-red-500 transition-colors">
+
+            <HiX size={22} />
+
+          </button>
+
+        </div>
+
+
+
+        {/* --- SCROLLABLE CONTENT --- */}
+
+        <div className="flex-1 overflow-y-auto p-5 md:p-8 space-y-4 custom-scrollbar">
+
+         
+
+          {/* COMPRESSED AVATAR SECTION */}
+
+          <div className="flex flex-col items-center pb-2 border-b border-white/5">
+
+            <div className="scale-[0.85] origin-top">
+
+              <AvatarUpload
+
+                currentUrl={profile?.avatar_url || null}
+
+                onUploadSuccess={async (newUrl) => {
+
+                  if (profile) setProfile({ ...profile, avatar_url: newUrl || undefined });
+
+                  if (refreshProfile) await refreshProfile();
+
+                }}
+
+              />
+
+            </div>
+
           </div>
-        )}
-      </AnimatePresence>
+
+
+
+          <div className="space-y-4">
+
+            {/* Username Input */}
+
+            <div className="space-y-1">
+
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">UserName</label>
+
+              <input
+
+                type="text"
+
+                value={newUsername}
+
+                onChange={(e) => setNewUsername(e.target.value)}
+
+                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-600/50"
+
+                placeholder="Username..."
+
+              />
+
+            </div>
+
+
+
+            {/* LETTERBOXD POSTER GRID */}
+
+            <div className="space-y-2">
+
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">Curate Favorites</label>
+
+              <div className="grid grid-cols-2 gap-3">
+
+                {/* Album Slot */}
+
+                <button
+
+                  type="button"
+
+                  onClick={() => {
+
+                    setSearchType('album');
+
+                    searchInputRef.current?.focus(); // Focus search on click
+
+                  }}
+
+                  className={`relative aspect-[2/3] rounded-2xl border-2 transition-all overflow-hidden flex flex-col items-center justify-center group
+
+                    ${searchType === 'album' ? 'border-red-600 bg-red-600/5 shadow-[0_0_20px_rgba(239,68,68,0.2)]' : 'border-white/5 bg-black/40 hover:border-white/20'}`}
+
+                >
+
+                  {profile?.fav_album ? (
+
+                    <Image src={profile.fav_album.cover_url || ""} alt="" fill className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+
+                  ) : (
+
+                    <HiPlus size={24} className={`${searchType === 'album' ? 'text-red-500' : 'text-neutral-800'}`} />
+
+                  )}
+
+                  <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black via-black/80 to-transparent">
+
+                    <p className={`text-[9px] font-black uppercase tracking-widest text-center leading-none ${searchType === 'album' ? 'text-red-500' : 'text-neutral-500'}`}>
+
+                      {profile?.fav_album ? 'Swap Album' : 'Select Album'}
+
+                    </p>
+
+                  </div>
+
+                </button>
+
+
+
+                {/* Single Slot */}
+
+                <button
+
+                  type="button"
+
+                  onClick={() => {
+
+                    setSearchType('single');
+
+                    searchInputRef.current?.focus(); // Focus search on click
+
+                  }}
+
+                  className={`relative aspect-[2/3] rounded-2xl border-2 transition-all overflow-hidden flex flex-col items-center justify-center group
+
+                    ${searchType === 'single' ? 'border-red-600 bg-red-600/5 shadow-[0_0_20px_rgba(239,68,68,0.2)]' : 'border-white/5 bg-black/40 hover:border-white/20'}`}
+
+                >
+
+                  {profile?.fav_single ? (
+
+                    <Image src={profile.fav_single.cover_url || ""} alt="" fill className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+
+                  ) : (
+
+                    <HiPlus size={24} className={`${searchType === 'single' ? 'text-red-500' : 'text-neutral-800'}`} />
+
+                  )}
+
+                  <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black via-black/80 to-transparent">
+
+                    <p className={`text-[9px] font-black uppercase tracking-widest text-center leading-none ${searchType === 'single' ? 'text-red-500' : 'text-neutral-500'}`}>
+
+                      {profile?.fav_single ? 'Swap Single' : 'Select Single'}
+
+                    </p>
+
+                  </div>
+
+                </button>
+
+              </div>
+
+            </div>
+
+
+
+            {/* SEARCH INPUT */}
+
+            <div className="relative">
+
+              <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+
+              <input
+
+                ref={searchInputRef} // Attach Ref here
+
+                type="text"
+
+                placeholder={`Search for ${searchType}...`}
+
+                value={searchQuery}
+
+                onChange={(e) => setSearchQuery(e.target.value)}
+
+                className="w-full bg-black/40 border border-white/5 rounded-xl pl-9 pr-4 py-3 text-[11px] text-white focus:outline-none focus:border-red-600/50 font-bold placeholder:text-neutral-700"
+
+              />
+
+
+
+              {/* FLOATING SEARCH RESULTS (UPWARDS) */}
+
+              {searchResults.length > 0 && (
+
+                <div className="absolute bottom-full left-0 w-full mb-3 bg-neutral-900 border border-white/10 rounded-[1.5rem] overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.8)] z-[120]">
+
+                  {searchResults.map((result) => (
+
+                    <button
+
+                      key={result.id}
+
+                      onClick={() => setFavorite(result.id)}
+
+                      className="w-full flex items-center gap-3 p-4 hover:bg-red-600/10 border-b border-white/5 last:border-none text-left group"
+
+                    >
+
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10">
+
+                        <Image src={result.cover_url || ""} alt="" fill className="object-cover" />
+
+                      </div>
+
+                      <div className="min-w-0">
+
+                        <p className="text-[11px] font-black text-white group-hover:text-red-500 transition-colors uppercase truncate">{result.title}</p>
+
+                        <p className="text-[9px] text-neutral-500 font-bold uppercase truncate">{result.artist}</p>
+
+                      </div>
+
+                    </button>
+
+                  ))}
+
+                </div>
+
+              )}
+
+            </div>
+
+          </div>
+
+
+
+          {/* ACTIVE PINS STATUS */}
+
+          <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1 text-[9px]">
+
+            <p className="text-neutral-600 font-bold uppercase tracking-[0.2em]">Active Pins</p>
+
+            <div className="flex justify-between items-center text-white italic">
+
+              <span className="truncate max-w-[75%]">Album: {profile?.fav_album?.title || 'None'}</span>
+
+              {profile?.fav_album && <button onClick={() => clearFavorite('album')} className="text-red-600 font-black">UNPIN</button>}
+
+            </div>
+
+            <div className="flex justify-between items-center text-white italic">
+
+              <span className="truncate max-w-[75%]">Single: {profile?.fav_single?.title || 'None'}</span>
+
+              {profile?.fav_single && <button onClick={() => clearFavorite('single')} className="text-red-600 font-black">UNPIN</button>}
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+
+        {/* FIXED FOOTER */}
+
+        <div className="p-5 md:p-8 bg-neutral-900 border-t border-white/5 shrink-0 pb-12 md:pb-8">
+
+          <button
+
+            onClick={handleUpdateProfile}
+
+            disabled={isUpdating}
+
+            className="w-full py-4 bg-red-600 text-white font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-red-500 transition-all flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(239,68,68,0.2)] active:scale-95"
+
+          >
+
+            {isUpdating ? 'Syncing...' : <><HiCheck /> Commit Changes</>}
+
+          </button>
+
+        </div>
+
+      </motion.div>
+
+    </div>
+
+  )}
+
+</AnimatePresence>
+
+
 
       {/* --- FOLLOW MODALS --- */}
       {profile?.id && <FollowModal isOpen={!!activeModal} onClose={() => setActiveModal(null)} title={activeModal || 'Followers'} profileId={profile.id} />}
