@@ -21,6 +21,13 @@ export default function SignUpPage() {
     setLoading(true);
     setError(null);
 
+    // --- ADDED VALIDATION CASE ---
+    if (username.includes(' ')) {
+      setError("Spaces are not allowed in username.");
+      setLoading(false);
+      return;
+    }
+
     try {
       // 1. Create the user in Supabase
       const { data, error: authError } = await supabase.auth.signUp({
@@ -38,8 +45,6 @@ export default function SignUpPage() {
       // --- SUCCESS BLOCK: HARD REDIRECT ---
       if (data.user) {
         setLoading(false);
-        // Using window.location.href instead of router.push
-        // This is the most reliable way to stay logged in on a refresh.
         window.location.href = '/'; 
       }
     } catch (err) {
@@ -114,6 +119,7 @@ export default function SignUpPage() {
             />
           </div>
 
+          {/* Error Message Case */}
           {error && (
             <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
               <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{error}</p>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { HiX, HiSparkles, HiUserCircle } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { generateSlug } from '@/app/lib/utils';
 
 // --- UPDATED STRICT INTERFACES ---
 
@@ -123,7 +124,7 @@ export default function FollowModal({ isOpen, onClose, title, profileId }: Follo
                   {users.map((u) => (
                     <Link 
                       key={u.id} 
-                      href={`/profile/${u.username}`} 
+                    href={`/profile/${u.username}`}
                       onClick={onClose}
                       className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white/5 transition-all group"
                     >

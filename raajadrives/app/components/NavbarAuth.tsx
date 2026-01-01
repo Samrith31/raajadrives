@@ -4,6 +4,7 @@ import { useAuth } from '@/app/context/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image'; // Import Image for the avatar
 import { HiUserCircle, HiLogout } from 'react-icons/hi';
+import { generateSlug } from '@/app/lib/utils';
 
 export default function NavbarAuth() {
   // Destructure avatarUrl from our updated useAuth hook
