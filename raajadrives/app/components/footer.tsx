@@ -67,9 +67,9 @@ export default function Footer() {
             
             <div className="flex gap-4">
               
-              {/* Telegram Button */}
+              {/* Telegram Button  https://t.me/+2eRd9A1OaAs5NTJl */}
               <Link 
-                href="https://t.me/+2eRd9A1OaAs5NTJl" 
+                href="#" 
                 target="_blank"
                 className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-[#229ED9] hover:border-[#229ED9] transition-all duration-300"
               >
@@ -78,18 +78,18 @@ export default function Footer() {
                 </svg>
               </Link>
 
-              {/* YouTube */}
+              {/* YouTube  https://youtube.com/@samrith31?si=4KLeuZ1_i-tPY_oI*/}
               <Link 
-                href="https://youtube.com/@samrith31?si=4KLeuZ1_i-tPY_oI" 
+                href="#" 
                 target="_blank"
                 className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-red-600 hover:border-red-600 transition-all duration-300"
               >
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.498-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
               </Link>
 
-              {/* X / Twitter */}
+              {/* X / Twitter https://x.com/samstillyearns */}
               <Link 
-                href="https://x.com/samstillyearns" 
+                href="#" 
                 target="_blank"
                 className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-black hover:border-white/40 transition-all duration-300"
               >

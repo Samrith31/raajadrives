@@ -194,44 +194,47 @@ return (
       </header>
 
       {/* Grid - Standardized to the Deezer/Spotify layout in your image */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-8 gap-y-12">
-        {formattedItems.length ? (
-          formattedItems.map(item => (
-            <div key={item.crateEntryId} className="group flex flex-col gap-4">
-              {/* Image Container with Hover Effect */}
-              <div className="
-                relative aspect-square rounded-xl overflow-hidden
-                bg-[#161618] border border-white/5
-                transition-all duration-500 group-hover:shadow-[0_20px_40px_rgba(225,29,72,0.15)]
-              ">
-                <AlbumCard album={item.release} />
-                
-                {/* Minimalist Play Overlay */}
-                <div className="
-                  absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 
-                  transition-opacity duration-300 flex items-center justify-center
-                ">
-                  <div className="w-12 h-12 rounded-full bg-rose-600 flex items-center justify-center translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                    <HiPlay size={24} className="text-white ml-1" />
-                  </div>
-                </div>
-              </div>
 
-              {/* Text Meta (Simulating the image text style) */}
-              <div>
-                <h3 className="text-sm font-bold truncate tracking-tight">{item.release.title}</h3>
-                <p className="text-xs text-white/40 mt-1 uppercase tracking-tighter font-mono">
-                  {item.release.artist} • FLAC
-                </p>
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-8 gap-y-12">
+  {formattedItems.length ? (
+    formattedItems.map(item => (
+      <div key={item.crateEntryId} className="group flex flex-col gap-4">
+        
+        {/* IMAGE CONTAINER */}
+        <div className="relative">
+          <div className="relative rounded-3xl overflow-hidden aspect-square border border-white/5 shadow-2xl">
+            {/* IMPORTANT: AlbumCard already contains a <Link>. 
+               We do NOT wrap it in another <Link> here. 
+            */}
+            <AlbumCard album={item.release} />
+            
+            {/* Minimalist Play Overlay */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+              <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center translate-y-4 group-hover:translate-y-0 transition-transform duration-300 shadow-xl shadow-red-900/40">
+                <HiPlay size={24} className="text-white ml-1" />
               </div>
             </div>
-          ))
-        ) : (
-          <div className="col-span-full py-32 text-center border border-dashed border-white/5 rounded-2xl">
-            <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-white/20">Empty Archive</p>
           </div>
-        )}
+        </div>
+
+        {/* TEXT META (Wrapped in its own Link to avoid nesting) */}
+        <Link href={`/releases/${item.release.slug}`} className="mt-4 block group/text">
+          <h3 className="text-sm font-bold truncate tracking-tight group-hover/text:text-red-500 transition-colors">
+            {item.release.title}
+          </h3>
+          <p className="text-[10px] text-white/40 mt-1 uppercase tracking-tighter font-mono font-bold">
+            {item.release.artist} • FLAC
+          </p>
+        </Link>
+
       </div>
+    ))
+  ) : (
+    <div className="col-span-full py-32 text-center border border-dashed border-white/5 rounded-2xl">
+      <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-white/20">Empty Archive</p>
+    </div>
+  )}
+  </div>
     </div>
   </main>
 );}
