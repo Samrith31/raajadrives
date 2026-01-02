@@ -1,11 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /* 👇 This is the essential part for CapRover/Docker */
+  output: 'standalone', 
+  
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        // 👇 This matches your specific Supabase project URL
         hostname: 'zkmmgecxdkrzyxfwiqnm.supabase.co', 
         port: '',
         pathname: '/storage/v1/object/public/**',
