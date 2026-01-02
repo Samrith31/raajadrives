@@ -8,6 +8,8 @@ import Link from 'next/link';
 import AlbumCard from '@/app/components/AlbumCard';
 import RouletteModal from '@/app/components/RouletteModal';
 import { Release } from '@/app/data/release';
+import FanwallModal from '@/app/components/FanwallModal';
+
 
 interface LatestDropsProps {
   releases: Release[];
@@ -16,6 +18,9 @@ interface LatestDropsProps {
 export default function LatestDrops({ releases }: LatestDropsProps) {
   const scrollContainer = useRef<HTMLDivElement>(null);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
+
+  const [isFanwallOpen, setIsFanwallOpen] = useState(false);
+ 
 
   const latestReleases = releases.slice(0, 5);
 
@@ -108,7 +113,8 @@ export default function LatestDrops({ releases }: LatestDropsProps) {
             </Link>
           </div>
         </div>
-
+ 
+ <div className="mt-8 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
         {/* --- DAILY SPIN BUTTON WITH LOGO --- */}
         <div className="mt-4 flex justify-center md:justify-start">
           <button
@@ -138,7 +144,46 @@ export default function LatestDrops({ releases }: LatestDropsProps) {
           </button>
         </div>
 
+    
+    {/*fan wall modal button*/}
+     
+      <div className="mt-4 flex justify-center md:justify-start">
+          <button
+            onClick={() => setIsFanwallOpen(true)}
+            className="group relative flex items-center gap-3 px-8 py-4 bg-neutral-900 border border-white/5 rounded-2xl overflow-hidden transition-all hover:border-red-500/50 active:scale-95"
+          >
+            {/* Background Glow */}
+            <div className="absolute inset-0 bg-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            {/* Logo Container (Spins on hover) */}
+            <div className="relative z-10 w-10 h-10 rounded-full overflow-hidden border-2 border-red-600 shadow-[0_0_15px_rgba(239,68,68,0.5)] group-hover:animate-spin-slow">
+               <Image
+                              src="/images/logo-2.jpeg" 
+                              alt="Raaja Drives Logo"
+                              fill
+                              unoptimized={true}
+                              className="object-cover"
+                            />
+                          </div>
+            
+            <div className="relative z-10 text-left">
+              <span className="block text-[10px] font-black text-red-500 uppercase tracking-[0.2em] leading-none mb-1">FanWall</span>
+              <span className="block text-sm font-bold text-white uppercase tracking-tighter italic">Top Spots</span>
+            </div>
+
+            <ArrowRight className="relative z-10 w-4 h-4 text-neutral-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
+          </button>
+        </div>
+
+
+</div>
       </div>
+
+
+      <FanwallModal 
+        isOpen={isFanwallOpen} 
+        onClose={() => setIsFanwallOpen(false)} 
+      />
 
       {/* --- ROULETTE MODAL --- */}
       <RouletteModal 
