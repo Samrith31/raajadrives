@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FollowModal from '@/app/components/FollowModal';
 import AvatarUpload from '@/app/components/AvatarUpload';
 import CreateCrate from '@/app/components/CreateCrate';
+import Link from 'next/link';
 
 interface UserProfile {
   id: string;
@@ -349,18 +350,52 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
         </div>
 
-        {/* --- COLLECTION GRID --- */}
-        <div className="flex items-center justify-between mb-6 px-1">
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-[2px] bg-red-600" />
-            <h2 className="text-sm md:text-lg font-black text-white uppercase italic tracking-tight">Personal <span className="text-neutral-500 font-medium"> Archive</span></h2>
-          </div>
+{/* --- PERSONAL ARCHIVE SECTION --- */}
+<div className="mt-16 mb-8 px-1">
+ <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8 px-1">
+  {/* Left Section: Title */}
+  <div className="flex items-center gap-2">
+    <div className="h-4 w-[2px] bg-red-600 shadow-[0_0_8px_#dc2626]" />
+    <h2 className="text-sm md:text-lg font-black text-white uppercase italic tracking-tight">
+      Personal <span className="text-neutral-500 font-medium"> Archive</span>
+    </h2>
+  </div>
+  
+  {/* Right Section: Link - Now drops below title on mobile with clean spacing */}
+  <Link 
+    href={`/profile/${profile?.username}/diary`}
+    className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500 hover:text-red-500 transition-all group flex items-center gap-2 self-start sm:self-auto"
+  >
+    <span className="relative">
+      Full Archive Diary
+      <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-red-600 group-hover:w-full transition-all duration-300" />
+    </span>
+    <span className="group-hover:translate-x-1 transition-transform text-red-600">→</span>
+  </Link>
+</div>
+
+  {likedReleases.length > 0 ? (
+    /* Grid Logic: 
+       - grid-cols-2 (Mobile: 2 columns)
+       - lg:grid-cols-6 (Desktop: 6 columns)
+    */
+    <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4 mb-10">
+      {likedReleases.slice(0, 6).map((album, index) => (
+        <div 
+          key={album.id} 
+          /* Hidden logic: index 4 and 5 (the 5th and 6th items) are hidden on mobile */
+          className={`${index >= 4 ? 'hidden lg:block' : 'block'}`}
+        >
+          <AlbumCard album={album} userRating={userRatings[album.id]} />
         </div>
-        {likedReleases.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6 mb-20">
-            {likedReleases.map((album) => <AlbumCard key={album.id} album={album} userRating={userRatings[album.id]} />)}
-          </div>
-        ) : <div className="py-20 text-center text-neutral-800 uppercase text-[10px] font-black tracking-widest">Drive Empty</div>}
+      ))}
+    </div>
+  ) : (
+    <div className="py-20 text-center text-neutral-800 uppercase text-[10px] font-black tracking-widest border border-dashed border-white/5 rounded-3xl">
+      Drive Empty
+    </div>
+  )}
+</div>
 
         {/* --- ARCHIVAL CRATES SECTION --- */}
         <div className="mt-20 mb-12 px-1">
