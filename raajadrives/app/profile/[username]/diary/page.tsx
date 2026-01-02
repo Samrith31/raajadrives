@@ -167,7 +167,20 @@ export default function ArchiveDiary({ params }: { params: Promise<{ username: s
 
       {/* --- TIMELINE LIST: Also moves up because header margins were reduced --- */}
       <div className="relative space-y-12 md:space-y-16">
-        <div className="absolute left-[24px] md:left-[40px] top-2 bottom-6 w-[1px] bg-gradient-to-b from-red-600/50 via-neutral-800 to-transparent hidden sm:block" />
+      <div className="absolute 
+    /* left-[23px] matches the center of the mobile date marker box */
+    left-[23px] 
+    /* md:left-[39px] matches the center of the desktop date marker box */
+    md:left-[39px] 
+    top-0 
+    bottom-0 
+    w-[1px] 
+    /* Gradient starts at the first log and fades out at the bottom */
+    bg-gradient-to-b from-red-600/60 via-neutral-800/40 to-transparent 
+    /* Removed 'hidden sm:block' so it shows on mobile */
+    z-0" 
+  />
+        
 
         {logs.map((log: ArchiveEntry) => {
           const date = new Date(log.created_at);
