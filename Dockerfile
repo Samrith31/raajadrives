@@ -28,11 +28,19 @@ ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# 1. Copy public folder (for your logos/images)
 COPY --from=builder /app/public ./public
+
+# 2. Copy the standalone server logic
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+# 3. CRITICAL: Copy static files INTO .next/static
+# This is where your CSS/JS lives. 
+# Without this, your app will have zero styling.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 EXPOSE 3000
 ENV PORT 3000
+
 CMD ["node", "server.js"]
