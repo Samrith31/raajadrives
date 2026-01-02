@@ -1,21 +1,26 @@
+# Stage 1: Install dependencies
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY raajadrives/package.json raajadrives/package-lock.json* ./
 RUN npm ci
 
 # Stage 2: Build the app
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy the contents of the subfolder into the image
-COPY raajadrives/package.json raajadrives/package-lock.json* ./
-RUN npm ci
+# 1. Define Build Arguments
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-# Copy the rest of the subfolder contents
+# 2. Set them as Environment Variables for the build process
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+COPY --from=deps /app/node_modules ./node_modules
 COPY raajadrives/ .
 
-# Now npm will find the build script
+# Now the build will have access to the Supabase variables
 RUN npm run build
 
 # Stage 3: Runner
