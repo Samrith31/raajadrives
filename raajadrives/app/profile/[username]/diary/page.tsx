@@ -98,7 +98,7 @@ export default function ArchiveDiary({ params }: { params: Promise<{ username: s
         </div>
         <h1 className="text-2xl font-black uppercase italic text-white mb-2 tracking-tighter">Archivist Not Found</h1>
         <Link href="/" className="mt-4 px-8 py-3 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
-          Return to Hub
+          Return to Drive
         </Link>
       </div>
     );
@@ -112,57 +112,57 @@ export default function ArchiveDiary({ params }: { params: Promise<{ username: s
     </div>
 
     {/* pt-4 pulls the whole page to the very top edge */}
-    <div className="relative max-w-2xl mx-auto px-6 pt-4 md:pt-12 z-10">
+  <div className="relative max-w-2xl mx-auto px-6 pt-2 md:pt-8 z-10">
+  
+  <div className="relative mb-6 md:mb-12 text-center">
+    {/* 2. Back Arrow: Change top-6 to top-0 */}
+    <Link 
+      href={`/profile/${username}`} 
+      className="absolute left-0 top-0 p-2.5 bg-neutral-900 border border-white/5 rounded-full text-neutral-400 hover:text-white transition-all active:scale-90 shadow-lg z-20"
+    >
+      <HiArrowLeft size={18} />
+    </Link>
+
+    {/* 3. Identity Container: Change pt-14 to pt-0 or pt-2 */}
+    {/* This pt-14 was the main reason the section felt "down" */}
+    <div className="flex flex-col items-center gap-3 pt-2 md:pt-4 max-w-md mx-auto">
       
-    {/* --- HEADER SECTION: CENTERED PROFILE + USERNAME --- */}
-{/* --- HEADER SECTION: FULLY CENTERED DESKTOP TOO --- */}
-<div className="relative mb-10 md:mb-20 text-center">
-  {/* Back Arrow - Always Absolute Top-Left */}
-  <Link 
-    href={`/profile/${username}`} 
-    className="absolute left-6 top-6 p-2.5 bg-neutral-900 border border-white/5 rounded-full text-neutral-400 hover:text-white transition-all active:scale-90 shadow-lg z-20"
-  >
-    <HiArrowLeft size={18} />
-  </Link>
+      {/* Profile Pic */}
+      <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 border-red-600/30 bg-neutral-900 shadow-2xl">
+        {profile.avatar_url ? (
+          <Image 
+            src={profile.avatar_url} 
+            alt={profile.username} 
+            fill 
+            className="object-cover" 
+            unoptimized 
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-neutral-700">
+            <HiUserCircle size={44} />
+          </div>
+        )}
+      </div>
 
-  {/* FULLY CENTERED: Profile Pic + Username + Entry Count */}
-  <div className="flex flex-col items-center gap-3 pt-14 md:pt-16 max-w-md mx-auto">
-    {/* Profile Pic */}
-    <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 border-red-600/30 bg-neutral-900 shadow-2xl">
-      {profile.avatar_url ? (
-        <Image 
-          src={profile.avatar_url} 
-          alt={profile.username} 
-          fill 
-          className="object-cover" 
-          unoptimized 
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-neutral-700">
-          <HiUserCircle size={44} />
+      {/* Username + Note */}
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-2">
+          <HiMusicNote className="text-yellow-500 text-lg md:text-xl flex-shrink-0" />
+          <h2 className="text-xl md:text-3xl lg:text-4xl font-black tracking-tight italic uppercase leading-none">
+            {profile.username}
+          </h2>
         </div>
-      )}
-    </div>
-
-    {/* Username + Note */}
-    <div className="flex flex-col items-center gap-1">
-      <div className="flex items-center gap-2">
-        <HiMusicNote className="text-yellow-500 text-lg md:text-xl flex-shrink-0" />
-        <h2 className="text-xl md:text-3xl lg:text-4xl font-black tracking-tight italic uppercase leading-none">
-          {profile.username}
-        </h2>
+        <div className="inline-flex items-center gap-1.5 text-red-500 text-[8px] md:text-[10px] font-black uppercase tracking-widest italic">
+          Archive Diary
+        </div>
       </div>
-      <div className="inline-flex items-center gap-1.5 text-red-500 text-[8px] md:text-[10px] font-black uppercase tracking-widest italic">
-        Archive Diary
-      </div>
-    </div>
 
-    {/* Entry Count - Centered Below */}
-    <p className="text-[9px] md:text-[10px] text-neutral-600 uppercase tracking-[0.4em] font-mono">
-      {logs.length} Entries Logged
-    </p>
+      {/* Entry Count */}
+      <p className="text-[9px] md:text-[10px] text-neutral-600 uppercase tracking-[0.4em] font-mono">
+        {logs.length} Entries Logged
+      </p>
+    </div>
   </div>
-</div>
 
 
       {/* --- TIMELINE LIST: Also moves up because header margins were reduced --- */}
