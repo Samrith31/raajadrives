@@ -84,6 +84,7 @@ export default async function CdRipListPage() {
                   <Image
                     src={album.coverUrl || '/images/placeholder.jpg'}
                     alt={album.title}
+                    unoptimized={true}
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />

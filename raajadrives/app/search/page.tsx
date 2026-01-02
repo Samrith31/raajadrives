@@ -68,6 +68,7 @@ export default async function SearchPage({
                       src={album.cover_url || '/images/placeholder.jpg'} 
                       alt="" 
                       fill 
+                      unoptimized={true}
                       className="object-cover group-hover:scale-110 transition-transform duration-500" 
                     />
                   </div>

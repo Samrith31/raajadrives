@@ -74,6 +74,7 @@ export default async function LatestPage() {
                     src={album.cover_url || '/images/placeholder.jpg'}
                     alt={album.title}
                     fill
+                    unoptimized={true}
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-110 group-hover:rotate-1"
                   />
                   

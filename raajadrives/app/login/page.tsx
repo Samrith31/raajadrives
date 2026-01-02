@@ -70,7 +70,7 @@ export default function LoginPage() {
       >
         <div className="flex flex-col items-center mb-8">
           <div className="relative w-16 h-16 rounded-full border-2 border-red-600 p-1 mb-4 shadow-[0_0_15px_rgba(239,68,68,0.3)]">
-            <Image src="/images/logo-2.jpeg" alt="Logo" fill className="object-cover rounded-full" />
+            <Image src="/images/logo-2.jpeg" alt="Logo" fill unoptimized={true}  className="object-cover rounded-full" />
           </div>
           <h1 className="text-2xl font-black text-white uppercase tracking-tighter italic leading-none">
             Access the <span className="text-red-500">Archive</span>

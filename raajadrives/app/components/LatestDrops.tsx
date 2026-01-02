@@ -124,6 +124,7 @@ export default function LatestDrops({ releases }: LatestDropsProps) {
                               src="/images/logo-2.jpeg" 
                               alt="Raaja Drives Logo"
                               fill
+                              unoptimized={true}
                               className="object-cover"
                             />
                           </div>

@@ -261,7 +261,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               <div className="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-10" />
               <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full border border-red-600/30 p-1.5 bg-neutral-950 overflow-hidden">
                 {profile?.avatar_url && !profile.avatar_url.includes('logo-2.jpeg') ? (
-                  <Image src={profile.avatar_url} alt="" fill className="object-cover rounded-full" priority />
+                  <Image src={profile.avatar_url} alt="" fill unoptimized={true} className="object-cover rounded-full" priority />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-neutral-900 rounded-full relative">
                     <div className="absolute inset-0 bg-red-600/5 animate-pulse rounded-full" />
@@ -309,7 +309,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
               <div className="relative aspect-square w-full md:w-24 shrink-0 rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-neutral-950">
 
-                {profile?.fav_album ? <Image src={profile.fav_album.cover_url || '/images/logo-2.jpeg'} alt="Fav Album" fill className="object-cover group-hover:scale-110 transition-transform duration-700" /> : <button onClick={() => isOwnProfile && setIsEditModalOpen(true)} className="w-full h-full flex items-center justify-center text-neutral-700 hover:text-red-500"><HiPlus size={22} /></button>}
+                {profile?.fav_album ? <Image src={profile.fav_album.cover_url || '/images/logo-2.jpeg'} alt="Fav Album" fill unoptimized={true} className="object-cover group-hover:scale-110 transition-transform duration-700" /> : <button onClick={() => isOwnProfile && setIsEditModalOpen(true)} className="w-full h-full flex items-center justify-center text-neutral-700 hover:text-red-500"><HiPlus size={22} /></button>}
 
                 <div className="absolute top-2 right-2 w-1 h-1 rounded-full bg-red-600 shadow-[0_0_8px_#ef4444] animate-pulse" />
 
@@ -421,7 +421,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     <div className="absolute inset-1.5 rounded-full opacity-70 bg-[repeating-radial-gradient(circle,transparent_0px,transparent_1px,#444_3px,#333_5px)]" />
                     <div className="absolute inset-0 rounded-full opacity-30 bg-[conic-gradient(from_0deg,#555_0deg,transparent_180deg)] animate-[spin_15s_linear_infinite]" />
                     <div className="absolute inset-0 rounded-full flex items-center justify-center bg-gradient-to-br from-orange-500/90 to-red-600/90 border-2 sm:border-3 border-white/40 shadow-[0_0_25px_rgba(255,165,0,0.6)]">
-                      <Image src="/images/crate-logo.jpeg" alt="Crate Logo" width={96} height={96} className="w-4/5 h-4/5 object-contain rounded-full" priority />
+                      <Image src="/images/crate-logo.jpeg" alt="Crate Logo" width={96} height={96} unoptimized={true} className="w-4/5 h-4/5 object-contain rounded-full" priority />
                     </div>
                   </div>
                 </div>
@@ -571,7 +571,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
                   {profile?.fav_album ? (
 
-                    <Image src={profile.fav_album.cover_url || ""} alt="" fill className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <Image src={profile.fav_album.cover_url || ""} alt="" fill unoptimized={true} className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
 
                   ) : (
 
@@ -615,7 +615,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
                   {profile?.fav_single ? (
 
-                    <Image src={profile.fav_single.cover_url || ""} alt="" fill className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <Image src={profile.fav_single.cover_url || ""} alt="" fill unoptimized={true} className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
 
                   ) : (
 
@@ -685,7 +685,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
                       <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10">
 
-                        <Image src={result.cover_url || ""} alt="" fill className="object-cover" />
+                        <Image src={result.cover_url || ""} alt="" fill unoptimized={true} className="object-cover" />
 
                       </div>
 

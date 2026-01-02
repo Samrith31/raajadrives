@@ -93,6 +93,7 @@ export default function HeroSlideshow() {
               src={slide.image}
               alt="Ilaiyaraaja"
               fill
+              unoptimized={true}
               className={`object-cover object-top ${index === current ? 'animate-ken-burns' : ''}`}
               priority={index === 0}
             />

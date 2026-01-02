@@ -47,6 +47,7 @@ export default function AlbumCard({
         <Image
           src={imageSrc}
           alt={album.title}
+          unoptimized={true}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-in-out"

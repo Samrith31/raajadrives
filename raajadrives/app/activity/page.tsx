@@ -191,7 +191,7 @@ export default function ActivityPage() {
                 <div className="flex items-center gap-3 mb-5">
                   <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-neutral-800 shrink-0 p-0.5 bg-neutral-950 group-hover:border-red-600/50 transition-colors">
                     {item.avatar_url ? (
-                      <Image src={item.avatar_url} alt={item.username} fill className="object-cover rounded-full" />
+                      <Image src={item.avatar_url} alt={item.username} unoptimized={true} fill className="object-cover rounded-full" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-neutral-800">
                         <HiUserCircle size={28} className="text-neutral-500" />
@@ -243,6 +243,7 @@ export default function ActivityPage() {
                     src={item.release.cover_url || '/images/logo-2.jpeg'}
                     alt={item.release.title}
                     fill
+                    unoptimized={true}
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                   />
                   {/* Subtle "Attached" tag for posts */}

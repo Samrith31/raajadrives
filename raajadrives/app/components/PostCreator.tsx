@@ -188,6 +188,7 @@ export default function PostCreatorModal({
                                   src={r.cover_url}
                                   alt=""
                                   fill
+                                  unoptimized={true}
                                   className="object-cover"
                                 />
                               </div>
@@ -222,6 +223,7 @@ export default function PostCreatorModal({
         src={selectedRelease.cover_url}
         alt=""
         fill
+        unoptimized={true}
         className="object-cover"
       />
     </div>
@@ -254,6 +256,7 @@ export default function PostCreatorModal({
                             src={avatarUrl} 
                             alt="Profile" 
                             fill 
+                            unoptimized={true}
                             className="object-cover" 
                           />
                         </div>

@@ -194,6 +194,7 @@ export default function DiscoveryPage() {
                           src={a.avatar_url} 
                           alt={a.username} 
                           fill 
+                          unoptimized={true}
                           className="object-cover rounded-full grayscale group-hover:grayscale-0 transition-all duration-700" 
                         />
                       ) : (

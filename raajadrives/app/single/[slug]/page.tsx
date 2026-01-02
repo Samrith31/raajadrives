@@ -150,6 +150,7 @@ export default function SinglePage({ params }: PageProps) {
               src={single.cover_url || '/images/placeholder.jpg'}
               alt={single.title}
               fill
+              unoptimized={true}
               className="object-cover group-hover:scale-105 transition-transform duration-[2s]"
               sizes="340px"
               priority

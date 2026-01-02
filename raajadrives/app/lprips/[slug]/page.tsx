@@ -154,6 +154,7 @@ export default function AlbumPage({ params }: AlbumPageProps) {
               src={album.cover_url || '/images/placeholder.jpg'}
               alt={album.title}
               fill
+              unoptimized={true}
               className="object-cover group-hover:scale-105 transition-transform duration-[2s]"
               sizes="340px"
               priority

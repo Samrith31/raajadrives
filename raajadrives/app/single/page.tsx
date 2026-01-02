@@ -87,6 +87,7 @@ export default async function SinglesListPage() {
                     src={track.coverUrl || '/images/placeholder.jpg'}
                     alt={track.title}
                     fill
+                    unoptimized={true}
                     className="object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                 </div>

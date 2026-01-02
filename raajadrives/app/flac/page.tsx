@@ -82,6 +82,7 @@ export default async function FlacListPage() {
                     src={album.coverUrl || '/images/placeholder.jpg'}
                     alt={album.title}
                     fill
+                    unoptimized={true}
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>

@@ -102,6 +102,7 @@ export default function RouletteModal({ isOpen, onClose }: { isOpen: boolean, on
                         src="/images/logo-2.jpeg" 
                         alt="Logo"
                         fill
+                        unoptimized={true}
                         className="object-cover"
                       />
                   </div>
@@ -137,7 +138,7 @@ export default function RouletteModal({ isOpen, onClose }: { isOpen: boolean, on
                       style={{ transform: `rotate(${i * 72 + 36}deg)` }}
                     >
                       <div className="relative w-14 h-14 md:w-16 md:h-16 bg-neutral-800 rounded-full border border-white/10 overflow-hidden rotate-[-36deg]">
-                        <Image src={song.cover_url || '/placeholder.jpg'} alt="" fill className="object-cover" />
+                        <Image src={song.cover_url || '/placeholder.jpg'} alt="" fill  unoptimized={true} className="object-cover" />
                       </div>
                     </div>
                   ))}
@@ -157,7 +158,7 @@ export default function RouletteModal({ isOpen, onClose }: { isOpen: boolean, on
                   <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full">
                     <Link href={`/single/${winner.slug}`} onClick={onClose} className="flex items-center gap-4 p-4 bg-white/5 rounded-[1.8rem] border border-amber-500/20 group hover:border-amber-500/50 transition-all shadow-lg">
                       <div className="relative w-16 h-16 rounded-xl overflow-hidden shadow-xl shrink-0 border border-white/5">
-                        <Image src={winner.cover_url || '/placeholder.jpg'} alt="" fill className="object-cover" />
+                        <Image src={winner.cover_url || '/placeholder.jpg'} unoptimized={true} alt="" fill className="object-cover" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <span className="text-[8px] font-black bg-amber-500 text-black px-2 py-0.5 rounded-full uppercase tracking-tighter mb-1 inline-block">Pick of the day</span>

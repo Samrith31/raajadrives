@@ -88,6 +88,7 @@ export default function CreateCrate({ isOpen, onClose, onRefresh }: {
                       alt="Crate Logo"
                       width={96}
                       height={96}
+                      unoptimized={true}
                       className="w-4/5 h-4/5 object-contain rounded-full"
                       priority
                     />

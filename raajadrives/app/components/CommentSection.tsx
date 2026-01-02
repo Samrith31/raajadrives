@@ -227,6 +227,7 @@ export default function CommentSection({ slug }: { slug: string }) {
                         src={comment.avatar_url}
                         alt={comment.nickname}
                         fill
+                        unoptimized={true}
                         className="object-cover"
                         sizes="32px"
                       />

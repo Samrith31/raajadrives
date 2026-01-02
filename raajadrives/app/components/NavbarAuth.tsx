@@ -28,6 +28,7 @@ export default function NavbarAuth() {
                 src={avatarUrl} 
                 alt={username || 'Archivist'} 
                 fill 
+                unoptimized={true}
                 className="object-cover"
                 sizes="24px"
               />

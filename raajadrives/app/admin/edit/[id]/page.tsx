@@ -181,6 +181,7 @@ export default function EditPage({ params }: EditPageProps) {
                   src={previewUrl || formData.coverUrl || '/placeholder.jpg'} 
                   alt="Preview" 
                   fill 
+                  unoptimized={true}
                   className="object-cover"
                 />
               </div>
