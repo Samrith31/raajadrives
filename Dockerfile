@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Pointing to your subfolder specifically
+# Using your raajadrives subfolder
 COPY raajadrives/package.json raajadrives/package-lock.json ./
 RUN npm ci
 
@@ -11,16 +11,13 @@ RUN npm ci
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-# Copy everything from your project subfolder into the builder
 COPY raajadrives/ . 
 
-# Environment Variables
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-# Build the project
 RUN npm run build
 
 # Stage 3: Runner
@@ -31,15 +28,18 @@ ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# --- CRITICAL PATH ADJUSTMENTS FOR YOUR STRUCTURE ---
-# Next.js standalone mode with subfolders creates a specific nested path
+# 1. Copy Public assets
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# This is often needed if styling is still missing:
-# It ensures the CSS is available at the root level the server expects
-RUN mkdir -p .next && cp -r static .next/
+# 2. Copy the standalone server logic
+# This folder is created by 'output: standalone' in your config
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+# 3. FIXED CSS/JS MAPPING
+# Instead of using 'cp' which failed, we use two explicit COPY commands
+# to ensure styling is found regardless of how the server starts.
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./static
 
 USER nextjs
 EXPOSE 3000
