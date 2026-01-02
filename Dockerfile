@@ -1,37 +1,37 @@
-# Stage 1: Install dependencies
+# Stage 1: Dependencies
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY raajadrives/package.json raajadrives/package-lock.json* ./
 RUN npm ci
 
-# Stage 2: Build the app
+# Stage 2: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# 1. Define Build Arguments
+# Required for Supabase to work during build
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-# 2. Set them as Environment Variables for the build process
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY raajadrives/ .
 
-# Now the build will have access to the Supabase variables
 RUN npm run build
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner
 WORKDIR /app
+
 ENV NODE_ENV production
 ENV PORT 3000
 
-COPY --from=builder /app/public ./public
+# Copy the standalone build
 COPY --from=builder /app/.next/standalone ./
+# IMPORTANT: Copy static files into .next/static so the server can find CSS/JS
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 CMD ["node", "server.js"]
