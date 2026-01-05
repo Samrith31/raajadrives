@@ -147,21 +147,28 @@ export default function AlbumPage({ params }: AlbumPageProps) {
       <div className="max-w-2xl w-full z-10 flex flex-col items-center text-center">
         
         {/* 1. Artwork */}
-        <div className="relative aspect-square w-full max-w-[340px] mb-8 group">
-          <div className="absolute inset-0 bg-red-600/20 blur-3xl rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000 opacity-50" />
-          <div className="relative h-full w-full rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.9)] overflow-hidden border border-white/10">
-            <Image
-              src={album.cover_url || '/images/placeholder.jpg'}
-              alt={album.title}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-[2s]"
-              sizes="340px"
-              priority
-            />
+{/* 1. Artwork */}
+<div className="relative w-full max-w-[340px] px-4 mb-8 group"> {/* Added padding for small screens */}
+  <div className="relative aspect-square w-full"> {/* Moved aspect-square here */}
+    
+    {/* Glow Effect */}
+    <div className="absolute inset-0 bg-red-600/20 blur-3xl rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000 opacity-50" />
+    
+    {/* Image Container */}
+    <div className="relative h-full w-full rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.9)] overflow-hidden border border-white/10">
+      <Image
+        src={album.cover_url || '/images/placeholder.jpg'}
+        alt={album.title}
+        fill
+        className="object-cover group-hover:scale-105 transition-transform duration-[2s]"
+        sizes="(max-width: 768px) 100vw, 340px" // Better sizes handling
+        priority
+      />
             <div className="absolute top-4 left-4 px-3 py-1 bg-red-600 text-white text-[10px] font-black uppercase rounded-sm tracking-[0.2em] shadow-xl">
               {album.quality || 'Lossless'}
             </div>
           </div>
+        </div>
         </div>
 
         {/* 2. Like */}
