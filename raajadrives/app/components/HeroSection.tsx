@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import RouletteModal from './RouletteModal'; // Ensure correct import path
+import RouletteModal from './RouletteModal';
 
 const heroSlides = [
   {
@@ -43,30 +43,47 @@ const heroSlides = [
   {
     id: 6,
     image: '/images/raaja-6.jpeg', 
-    badge: "Universal Harmony",
-    quote: "There is no difference between the howl of a dog and the songs of vidwans.",
-    subQuote: "Finding melody in the most unexpected places."
+    badge: "Natural Flow",
+    quote: "Nature is the greatest composer; I just listen.",
+    subQuote: "Capturing the organic essence of rural life."
   },
-  
-// {
-//   id: 7,
-//   image: '/images/raaja-7.jpeg',
-//   badge: "Purpose of Music",
-//   quote: "True music has no agenda; it flows naturally, like a river.",
-//   subQuote: "When a composer sings without intent or trade, like a farmer humming in the fields, that is real music."
-// }
-
-  
+  {
+    id: 7,
+    image: '/images/raaja-9.jpg', 
+    badge: "Symphonic Soul",
+    quote: "Silence is the canvas, music is the paint.",
+    subQuote: "Creating masterpieces in the quiet moments."
+  },
+  {
+    id: 8,
+    image: '/images/raaja-10.jpg', 
+    badge: "Fan Favourites",
+    quote: "A Social Space for all the Raaja Fans.",
+    subQuote: "Post Comment Crate Love Download."
+  },
+  // {
+  //   id: 9,
+  //   image: '/images/raaja-13.jpg', 
+  //   badge: "Rhythmic Life",
+  //   quote: "The beat of the heart is the first drum we ever hear.",
+  //   subQuote: "The pulse of a nation captured in every rhythm."
+  // },
+  // {
+  //   id: 10,
+  //   image: '/images/raaja-12.jpg', 
+  //   badge: "Ethereal Echoes",
+  //   quote: "My melodies are memories you haven't lived yet.",
+  //   subQuote: "Nostalgia woven into the fabric of sound."
+  // },
 ];
 
 export default function HeroSlideshow() {
   const [current, setCurrent] = useState(0);
-  const [isRouletteOpen, setIsRouletteOpen] = useState(false); // Modal State
+  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const duration = 6000;
 
   useEffect(() => {
     const timer = setInterval(() => {
-      // Don't auto-slide if the roulette is open (optional, keeps focus)
       if (!isRouletteOpen) {
         setCurrent((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1));
       }
@@ -77,15 +94,15 @@ export default function HeroSlideshow() {
   return (
     <>
       <div 
-        className="relative h-[80vh] w-full overflow-hidden bg-neutral-950 border-b border-white/10 group cursor-pointer"
-        onClick={() => setIsRouletteOpen(true)} // Trigger Modal on Click
+        className="relative h-[85vh] w-full overflow-hidden bg-neutral-950 border-b border-white/10 group cursor-pointer"
+        onClick={() => setIsRouletteOpen(true)}
       >
         
         {/* --- LAYER 1: THE IMAGES --- */}
         {heroSlides.map((slide, index) => (
           <div
             key={slide.id}
-            className={`absolute inset-0 transition-opacity duration-1500 ease-in-out ${
+            className={`absolute inset-0 transition-opacity duration-[1500ms] ease-in-out ${
               index === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
             }`}
           >
@@ -93,21 +110,19 @@ export default function HeroSlideshow() {
               src={slide.image}
               alt="Ilaiyaraaja"
               fill
-              unoptimized={true}
+              unoptimized
               className={`object-cover object-top ${index === current ? 'animate-ken-burns' : ''}`}
               priority={index === 0}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-neutral-950/30" />
-            <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/90 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/80 via-transparent to-transparent" />
           </div>
         ))}
 
-
         {/* --- LAYER 2: THE CONTENT --- */}
-        <div className="relative z-20 flex flex-col justify-end h-full max-w-7xl mx-auto px-6 pb-24 pointer-events-none">
-          {/* pointer-events-none ensures clicking the text still triggers the parent div's onClick */}
+        <div className="relative z-20 flex flex-col justify-end h-full max-w-7xl mx-auto px-6 pb-32 pointer-events-none">
+          {/* We use the 'current' key here to re-trigger animations when the slide changes */}
           <div key={current} className="max-w-4xl space-y-6">
-            
             <div className="animate-fade-up opacity-0" style={{ animationDelay: '200ms' }}>
                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/30 bg-red-950/30 backdrop-blur-md">
                 <span className="relative flex h-2 w-2">
@@ -132,24 +147,21 @@ export default function HeroSlideshow() {
             >
               {heroSlides[current].subQuote}
             </p>
-
-            {/* Hint for the user */}
-          
           </div>
         </div>
 
-
         {/* --- LAYER 3: PROGRESS INDICATORS --- */}
-        <div className="absolute bottom-8 left-6 z-30 flex gap-3">
+        {/* Added flex-wrap and adjusted width to handle many items better */}
+        <div className="absolute bottom-12 left-6 z-30 flex flex-wrap gap-2 max-w-[90%]">
           {heroSlides.map((_, index) => (
             <button
               key={index}
               onClick={(e) => {
-                e.stopPropagation(); // Prevents the wheel from opening when just switching dots
+                e.stopPropagation();
                 setCurrent(index);
               }}
-              className={`h-1 rounded-full transition-all duration-500 ${
-                index === current ? 'w-8 bg-red-600' : 'w-2 bg-white/30 hover:bg-white'
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                index === current ? 'w-10 bg-red-600' : 'w-3 bg-white/20 hover:bg-white/50'
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
@@ -159,7 +171,6 @@ export default function HeroSlideshow() {
         <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-neutral-950 to-transparent z-20" />
       </div>
 
-      {/* --- THE MODAL --- */}
       <RouletteModal 
         isOpen={isRouletteOpen} 
         onClose={() => setIsRouletteOpen(false)} 
