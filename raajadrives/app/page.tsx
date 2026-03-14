@@ -5,6 +5,7 @@ import SectionHeader from '@/app/components/ui/SectionHeader';
 import HeroSlideshow from '@/app/components/HeroSection'; 
 import LatestDrops from '@/app/components/LatestDrops';
 import HotHits from '@/app/components/HotHits';
+import AnnouncementMarquee from '@/app/components/AnnouncementMarquee';
 
 export const revalidate = 0;
 
@@ -47,6 +48,7 @@ async function getAlbums(): Promise<Release[]> {
   }));
 }
 
+
 export default async function HomePage() {
   const releases = await getAlbums();
 
@@ -55,6 +57,9 @@ export default async function HomePage() {
       
       {/* Hero Section */}
       <HeroSlideshow />
+
+      {/* 2. Global Signal Marquee (Now Dynamic) */}
+      <AnnouncementMarquee />
 
       {/* Latest Drops */}
       <LatestDrops releases={releases} />
